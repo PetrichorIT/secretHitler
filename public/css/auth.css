@@ -1,0 +1,24 @@
+body {
+	position: relative;
+	height: 100vh;
+}
+
+.card {
+	position: absolute;
+	top: 45%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	width: 30vw;
+}
+
+@media (max-width: 800px) {
+	.card {
+		width: 50vw;
+	}
+}
+
+@media (max-width: 400px) {
+	.card {
+		width: 80vw;
+	}
+}

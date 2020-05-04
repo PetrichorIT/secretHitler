@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secret Hitler</title>
+
+    <link rel="stylesheet" href="css/home.css">
+    <link rel="stylesheet" href="css/bootstrap.min.css">
+</head>
+<body>
+    <div class="card mb-3 border-primary">
+        <h3 class="card-header bg-primary">Secret Hitler</h3>
+        <ul class="list-group list-group-flush">
+            <% for(const game of games) { %>
+                <li class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" onclick="window.location = '/<%= game.id %>'">
+                    Game #<%= game.id %>
+                    <span class="badge badge-primary badge-pill"><%= game.players %>  Players</span>
+                </li>
+            <% } %>
+
+        </ul>
+      </div>
+    <script src="js/cookies.js"></script>
+    <script src="js/home.js"></script>
+</body>
+</html>

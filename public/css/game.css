@@ -1,0 +1,117 @@
+body {
+	position: relative;
+	height: 100vh;
+}
+
+.readyCard {
+	display: none;
+
+	z-index: 1;
+	position: absolute;
+	left: 50%;
+	top: 40%;
+	transform: translate(-50%, -50%);
+}
+
+.voteContainer {
+	display: none;
+
+	z-index: 2;
+	position: absolute;
+	top: 0;
+	left: 0;
+	height: 100vh;
+	width: 100vw;
+	background-color: rgba(0, 0, 0, 0.55);
+}
+
+.voteTitle {
+	text-align: center;
+	font-size: 30pt;
+	font-weight: 900;
+	margin-top: 20vh;
+}
+
+.voteImgContainer {
+	margin-top: 15vh;
+	display: flex;
+	justify-content: center;
+}
+
+.voteImgContainer > * {
+	margin-top: 0;
+}
+
+.tableContainer {
+	position: absolute;
+	top: 40%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+}
+
+.tableRow {
+	display: flex;
+	justify-content: center;
+}
+
+/* IMAGES */
+
+.pile {
+	padding-top: 25px;
+	padding-left: 30px;
+	height: 150px;
+}
+
+.laws {
+	height: 200px;
+}
+
+.rolePicture {
+	position: absolute;
+	left: 5px;
+	bottom: 5px;
+	height: 175px;
+	transition: .3s;
+}
+
+.rolePicture:hover {
+	height: 200px;
+}
+
+.factionPicture {
+	position: absolute;
+	left: 120px;
+	bottom: 5px;
+	height: 175px;
+	transition: .3s;
+}
+
+.factionPicture:hover {
+	height: 200px;
+}
+
+.yesImg {
+	height: 200px;
+	transition: .3s;
+	transform: rotate(-20deg);
+}
+
+.yesImg:hover {
+	height: 225px;
+}
+
+.noImg {
+	height: 200px;
+	transition: .3s;
+	transform: rotate(20deg);
+}
+
+.noImg:hover {
+	height: 225px;
+}
+
+.boxShadow {
+	-webkit-box-shadow: 0px 0px 5px 0px rgba(0, 0, 0, 0.75);
+	-moz-box-shadow: 0px 0px 5px 0px rgba(0, 0, 0, 0.75);
+	box-shadow: 0px 0px 5px 0px rgba(0, 0, 0, 0.75);
+}

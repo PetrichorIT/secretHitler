@@ -1,0 +1,43 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SH - Login</title>
+
+    <link rel="stylesheet" href="css/auth.css">
+    <link rel="stylesheet" href="css/bootstrap.min.css">
+</head>
+<body>
+    
+    <form method="post" action="/login" class="card border-primary">
+        <h3 class="card-header bg-primary">Login</h3>
+        <div class="card-body">
+
+            <div class="form-group">
+                <label class="form-control-label" for="username">Enter Username here:</label>
+                <input type="text" placeholder="Username..." class="form-control" id="username">
+                <div class="invalid-feedback">Invalid username</div>
+                <div class="valid-feedback">Valid username</div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-control-label" for="password">Enter password here</label>
+                <input type="password" placeholder="Password..." class="form-control" id="password">
+                <div class="invalid-feedback">Invalid password (must contain upper and lower cased letters, min 8)</div>
+                <div class="valid-feedback">Good password</div>
+            </div>
+
+            <button type="button" id="loginSubmit" class="btn btn-primary">Log in</button>
+        </div>
+        <div class="card-footer text-muted">
+            <a  style="text-decoration: underline; opacity: 0.75;" href="/register">No account yet. Just register then</a>
+        </div>
+    </form>
+
+
+    <script src="js/cookies.js"></script>
+    <script src="js/login.js"></script>
+</body>
+</html>
+</body>
+</html>

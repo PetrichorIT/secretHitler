@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SH Game #<%= gameid %></title>
+
+    <link rel="stylesheet" href="css/bootstrap.min.css">
+    <link rel="stylesheet" href="css/game.css">
+</head>
+<body>
+    
+    <!-- Ready For Game -->
+    <div class="readyCard card mb-3 border-primary boxShadow">
+        <h3 class="card-header bg-primary">Waiting for players</h3>
+        <div class="card-body">
+            <div class="custom-control custom-checkbox">
+                <input type="checkbox" class="custom-control-input" id="ready" onclick="readyForGame()">
+                <label class="custom-control-label" for="ready">Ready?</label>
+              </div>
+        </div>
+    </div>
+
+    <div class="voteContainer">
+        <div class="voteTitle">
+            Player123 as Chancellor
+        </div>
+        <div class="voteImgContainer">
+            <img class="yesImg boxShadow" src="img/yes.png" alt="YES-IMG" onclick="voteResult(true)">
+            <img class="noImg boxShadow" src="img/no.png" alt="NO-IMG" onclick="voteResult(false)">
+        </div>
+    </div>
+
+    <%= gameid %>
+
+    <div class="gameStateContainer"></div>
+
+    <div class="tableContainer">
+        <div class="tableRow">
+            <img class="laws" src="img/laws-fasho-8.png" alt="">
+            <div class="pileContainer">
+                <img class="pile" src="img/draw-pile.png" alt="">
+            </div>
+        </div>
+        <div class="tableRow">
+            <img class="laws" src="img/laws-liberal.png" alt="">
+            <div class="pileContainer">
+                <img class="pile" src="img/discard-pile.png" alt="">
+            </div>
+        </div>
+    </div>
+
+
+    <div class="ui-container">
+        <img class="rolePicture boxShadow" src="img/tba.png" alt="">
+        <img class="factionPicture boxShadow" src="img/tba.png" alt="">
+    </div>
+
+    <script src="js/cookies.js"></script>
+    <script src="js/game.js"></script>
+    <script>
+        main("<%= gameid %>");
+    </script>
+</body>
+</html>

@@ -1,0 +1,48 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SH - Register</title>
+
+    <link rel="stylesheet" href="css/auth.css">
+    <link rel="stylesheet" href="css/bootstrap.min.css">
+</head>
+<body>
+    <form action="/register" method="post" class="card border-primary">
+        <h3 class="card-header bg-primary">Register</h3>
+        <div class="card-body">
+
+            <div class="form-group">
+                <label class="form-control-label" for="username">Username:</label>
+                <input type="text" placeholder="Username..." class="form-control" id="username">
+                <div class="invalid-feedback">Invalid username</div>
+                <div class="valid-feedback">Valid username</div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-control-label" for="password">Password:</label>
+                <input type="password" placeholder="Password..." class="form-control" id="password">
+                <div class="invalid-feedback">Invalid password (must contain lower and upper cased letters, min. 8)</div>
+                <div class="valid-feedback">Good password</div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-control-label" for="password2">Password repeat:</label>
+                <input type="password" placeholder="Password repeat..." class="form-control" id="password2">
+                <div class="invalid-feedback">Passwords dont match</div>
+                <div class="valid-feedback">Passwords match</div>
+            </div>
+
+            <button type="button" id="registerSubmit" class="btn btn-primary">Register</button>
+        </div>
+        <div class="card-footer text-muted">
+            <a style="text-decoration: underline; opacity: 0.75;" href="/login">Allready registered. Log in then.</a>
+        </div>
+    </form>
+
+    <script src="js/cookies.js"></script>
+    <script src="js/register.js"></script>
+</body>
+</html>
+</body>
+</html>
