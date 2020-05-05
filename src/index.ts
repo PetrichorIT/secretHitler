@@ -1,43 +1,45 @@
-const fs = require('fs');
+import fs from 'fs';
+import { v4 } from 'uuid';
+import express from 'express';
+import expressWs from 'express-ws';
+import ws from 'ws';
 
-const express = require('express');
-const expressWs = require('express-ws');
-const uuidgen = require('uuid').v4;
+import { jdb, SyncAdapter } from './jdb';
+import print from './logger';
+import Game from './Game';
 
-const { jdb, SyncAdapter } = require('./jdb');
-const { print } = require('./logger.js');
-const { Game } = require('./Game');
-
-var db = jdb(new SyncAdapter('data/auth.json'));
+const db = jdb(new SyncAdapter('data/auth.json'));
 db.defaults({ sessions: [], users: [] }).write();
+const clients: { [key: string]: ws[] } = {};
+const games: { [key: string]: Game } = {};
+const gameBlueprints = fs.readdirSync('data/games');
 
-/*
-Contains Game objects
-- sub is a DB to the gamefile
-*/
-const clients = {};
-const games = {};
-
-var app = express();
+const app = expressWs(express()).app;
 app.set('view engine', 'ejs');
 app.use(express.static('public'));
 
-expressWs(app);
-
 app.get('/', (req, res) => {
-	// const resp = [];
-	// for (const key in games) {
-	// 	console.log(key);
-	// 	resp.push({
-	// 		id: game.gameid,
-	// 		players: clients[game.gameid].length
-	// 	});
-	// }
-	// res.render('pages/home.ejs', { games: resp });
-	res.render('pages/home.ejs', { games: [ { id: 001, players: 4 }, { id: 002, players: 2 } ] });
-});
+	const gameOverviews: { id: string; isOn: boolean; data: any | undefined }[] = [];
 
-// REGISTER
+	gameBlueprints.forEach((gameBp) => {
+		gameOverviews.push({ id: gameBp.substring(0, gameBp.length - 5), isOn: false, data: undefined });
+	});
+
+	for (const key in games) {
+		if (games.hasOwnProperty(key)) {
+			const game = games[key];
+
+			const index = gameOverviews.findIndex((v) => v.id === game.id);
+			if (index === -1) {
+				gameOverviews.push({ id: game.id, isOn: true, data: { players: game.players.length } });
+			} else {
+				gameOverviews[index].isOn = true;
+				gameOverviews[index].data = { players: game.players.length };
+			}
+		}
+	}
+	res.render('pages/home.ejs', { games: gameOverviews });
+});
 
 const usernameRegex = /^[a-zA-Z0-9]+([_ -]?[a-zA-Z0-9])*$/;
 const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z]).{8,}$/;
@@ -86,7 +88,7 @@ app.post('/login', (req, res) => {
 	const reqRes = db.get('users').find({ username, password }).value();
 	if (!reqRes) return res.status(400).json({ type: 'error', error: '_invalid_credentials' });
 
-	const sid = uuidgen();
+	const sid = v4();
 	db
 		.get('sessions')
 		.push({
@@ -105,7 +107,7 @@ app.get('/:gameid', (req, res) => {
 	const gameid = req.params.gameid;
 
 	if (!games[gameid]) {
-		const ex = fs.existsSync(`data/${req.params.gameid}.json`);
+		const ex = fs.existsSync(`data/games/${req.params.gameid}.json`);
 		if (!ex) return res.status(400).json({ type: 'error', error: 'GameID does not exist' });
 		games[gameid] = new Game(gameid);
 	}
@@ -113,20 +115,19 @@ app.get('/:gameid', (req, res) => {
 	res.render('pages/game.ejs', { gameid: req.params.gameid });
 	print('Get', `game::${req.params.gameid} <${req.connection.remoteAddress}>`);
 });
-
 app.ws('/:gameid', (ws, req) => {
 	print('Ws', `game::${req.params.gameid} <${req.connection.remoteAddress}>`);
 
 	const gameid = req.params.gameid;
-	let sessionUser;
+	let sessionUser: { sid: string; time: Date; username: string };
 
-	const game = games[gameid];
+	const game: Game = games[gameid];
 	if (!game) return;
 
 	if (!clients[gameid]) clients[gameid] = [];
 	const index = clients[gameid].push(ws) - 1;
 
-	ws.on('message', function(msg) {
+	ws.on('message', function(msg: any) {
 		try {
 			const obj = JSON.parse(msg);
 			switch (obj.type) {
@@ -163,7 +164,7 @@ app.all('*', function(req, res) {
 });
 app.listen(80, () => console.log('Running at port 80'));
 
-const error = (ws, error) => {
+const error = (ws: ws, error: string) => {
 	print('Error', error);
 	ws.send(
 		JSON.stringify({

@@ -15,13 +15,18 @@
             <% for(const game of games) { %>
                 <li class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" onclick="window.location = '/<%= game.id %>'">
                     Game #<%= game.id %>
-                    <span class="badge badge-primary badge-pill"><%= game.players %>  Players</span>
+                    <% if (game.isOn) {%>
+                        <span class="badge badge-primary badge-pill"><%= game.data.players %> Players</span>
+                    <% } else {%>
+                        <span class="badge badge-primary badge-light">Not yet loaded</span>
+                    <% } %>
+                    
                 </li>
             <% } %>
 
         </ul>
       </div>
-    <script src="js/cookies.js"></script>
+      <script src="js/storage.js"></script>
     <script src="js/home.js"></script>
 </body>
 </html>

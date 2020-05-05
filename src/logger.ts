@@ -1,15 +1,16 @@
-const printGroups = {
+const printGroups: { [key: string]: string } = {
 	Ws: '\u{001b}[0;31m',
 	Exp: '\u{001b}[0;35m',
 	Get: '\u{001b}[0;36m',
 	Post: '\u{001b}[0;36m',
-	Error: '\u{001b}[1;31m'
+	Error: '\u{001b}[1;31m',
+	Game: '\u{001b}[0;35m'
 };
 
-const print = (printGroup, msg) => {
+export function print(printGroup: string, msg: string) {
 	const color = printGroups[printGroup];
 	if (!color) return;
 	console.log(`[ ${color}${printGroup}\u{001b}[0;39m ] ${msg}`);
-};
+}
 
-module.exports.print = print;
+export default print;

@@ -10,24 +10,33 @@
 </head>
 <body>
     
-    <!-- Ready For Game -->
-    <div class="readyCard card mb-3 border-primary boxShadow">
-        <h3 class="card-header bg-primary">Waiting for players</h3>
-        <div class="card-body">
-            <div class="custom-control custom-checkbox">
-                <input type="checkbox" class="custom-control-input" id="ready" onclick="readyForGame()">
-                <label class="custom-control-label" for="ready">Ready?</label>
-              </div>
+    <!-- Ready Container -->
+    <div class="popupContainer" id="readyContainer">
+        <div class="readyCard card mb-3 border-primary boxShadow">
+            <h3 class="card-header bg-primary">Waiting for players</h3>
+            <div class="card-body">
+                <div class="custom-control custom-checkbox">
+                    <input type="checkbox" class="custom-control-input" id="readyCheckbox">
+                    <label class="custom-control-label" for="readyCheckbox">Ready?</label>
+                  </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Vote Container -->
+    <div class="popupContainer" id="voteContainer">
+        <div class="popupTitle" id="voteTitle"></div>
+        <div class="popupImageContainer">
+            <img class="boxShadow" id="yesImage" src="img/yes.png" alt="YES-IMG">
+            <img class="boxShadow" id="noImage" src="img/no.png" alt="NO-IMG">
         </div>
     </div>
 
-    <div class="voteContainer">
-        <div class="voteTitle">
-            Player123 as Chancellor
-        </div>
-        <div class="voteImgContainer">
-            <img class="yesImg boxShadow" src="img/yes.png" alt="YES-IMG" onclick="voteResult(true)">
-            <img class="noImg boxShadow" src="img/no.png" alt="NO-IMG" onclick="voteResult(false)">
+    <!-- Selection Container -->
+    <div class="popupContainer" id="selectionContainer">
+        <div class="popupTitle" id="selectionTitle"></div>
+        <div class="popupCardContainer" id="selectionCardContainer">
+
         </div>
     </div>
 
@@ -56,8 +65,13 @@
         <img class="factionPicture boxShadow" src="img/tba.png" alt="">
     </div>
 
-    <script src="js/cookies.js"></script>
-    <script src="js/game.js"></script>
+
+    <script src="js/app/ReadyContext.js"></script>
+    <script src="js/app/SelectionContext.js"></script>
+    <script src="js/app/VoteContext.js"></script>
+
+    <script src="js/storage.js"></script>
+    <script src="js/app.js"></script>
     <script>
         main("<%= gameid %>");
     </script>

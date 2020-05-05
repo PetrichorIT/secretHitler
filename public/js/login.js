@@ -52,7 +52,7 @@ function checkLoginData() {
 				if (this.status === 200) {
 					const obj = JSON.parse(this.responseText);
 					if (obj.type !== 'success') return alert('An unexpected error has occured');
-					setCookie('sh.connect.sid', obj.sid, 1);
+					setStoredValue('sh.connect.sid', obj.sid, 1);
 					window.location = '/';
 				}
 

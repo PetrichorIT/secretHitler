@@ -2,20 +2,15 @@ const factionImg = document.querySelector('.factionPicture');
 const roleImg = document.querySelector('.rolePicture');
 const gameStateContainer = document.querySelector('.gameStateContainer');
 
-const readyForGameCard = document.querySelector('.readyCard');
-const readyForGameCheckbox = document.querySelector('#ready');
-
 var socket;
 
-function readyForGame() {
-	if (readyForGameCheckbox.value === 'on') {
-		readyForGameCheckbox.disabled = 'true';
-		sendEvent({ type: 'readyForGame' });
-	}
-}
+var readyContext;
+var gameContext;
+var selectionContext;
+var voteContext;
 
 function main(gameId) {
-	const sid = getCookie('sh.connect.sid') || false;
+	const sid = getStoredValue('sh.connect.sid') || false;
 	if (sid === false) {
 		return (window.location = '/');
 	}
@@ -25,6 +20,10 @@ function main(gameId) {
 	socket = new WebSocket(socketUrl);
 
 	socket.onopen = () => {
+		readyContext = new ReadyContext(socket);
+		voteContext = new VoteContext(socket);
+		selectionContext = new SelectionContext(socket);
+
 		socket.send(
 			JSON.stringify({
 				type: 'authenticate',
@@ -40,11 +39,11 @@ function main(gameId) {
 				case 'ingame':
 					switch (obj.event.type) {
 						case 'requestReadyForGame':
-							readyForGameCard.style.display = 'block';
+							readyContext.start();
 							break;
 
 						case 'startup':
-							readyForGameCard.remove();
+							readyContext.end();
 							break;
 
 						case 'role':
@@ -65,15 +64,15 @@ function main(gameId) {
 							break;
 
 						case 'selectChancellor':
-							const ignore = obj.event.ignorePlayers;
-							console.log(ignore);
-							const vote = ignore[0] == 1 ? 0 : 1;
-							sendEvent({ type: 'selectChancellor', selection: vote });
+							selectionContext.start(obj.event);
+							break;
 
-							break;
+						// VOTING
 						case 'voteChancellor':
-							startVoteSession(obj.event.chancellor);
+							voteContext.start(obj.event.chancellor);
 							break;
+						case 'votingEnded':
+							voteContext.end(obj.event.result);
 					}
 					break;
 				case 'error':
@@ -81,28 +80,14 @@ function main(gameId) {
 					break;
 			}
 		} catch (err) {
-			console.log(err);
+			print('Err', err);
 		}
 	};
 }
 
 function updateGlobalGameState(event) {
+	gameContext = event;
 	gameStateContainer.innerHTML = JSON.stringify(event);
-}
-
-// VOTING
-
-const voteContainer = document.querySelector('.voteContainer');
-const voteTitle = document.querySelector('.voteTitle');
-let votePlayerId;
-function startVoteSession(playerId) {
-	votePlayerId = playerId;
-	voteContainer.style.display = 'block';
-	voteTitle.innerHTML = 'MAX';
-}
-function voteResult(agreed) {
-	voteContainer.style.display = 'none';
-	sendEvent({ type: 'voteChancellor', vote: agreed });
 }
 
 // GLOBAL
