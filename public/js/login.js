@@ -6,16 +6,16 @@ const pwRegExp = new RegExp(/^(?=.*[a-z])(?=.*[A-Z]).{8,}$/);
 const usRegExp = new RegExp(/^[a-zA-Z0-9]+([_ -]?[a-zA-Z0-9])*$/);
 
 usernameField.addEventListener('keyup', (e) => {
-	checkUsernameField();
+	checkUsername();
 	if (e.keyCode === 13) passwordField.focus();
 });
 passwordField.addEventListener('keyup', (e) => {
 	checkPasswordField();
-	if (e.keyCode === 13) checkLoginData();
+	if (e.keyCode === 13) checkCreateData();
 });
-submitButton.addEventListener('click', checkLoginData);
+submitButton.addEventListener('click', checkCreateData);
 
-function checkUsernameField() {
+function checkUsername() {
 	if (!usernameField.value.match(usRegExp)) {
 		usernameField.classList.remove('is-valid');
 		usernameField.classList.add('is-invalid');
@@ -39,8 +39,8 @@ function checkPasswordField() {
 	}
 }
 
-function checkLoginData() {
-	const u = checkUsernameField();
+function checkCreateData() {
+	const u = checkUsername();
 	const p = checkPasswordField();
 
 	if (u && p) {

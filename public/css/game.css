@@ -15,25 +15,26 @@ body {
 .popupContainer {
 	display: none;
 	position: absolute;
-	z-index: 2;
+	z-index: 3;
 	top: 0;
 	left: 0;
 	height: 100vh;
 	width: 100vw;
 	background-color: rgba(0, 0, 0, 0.55);
+	text-align: center;
 }
 
 .popupTitle {
 	text-align: center;
 	font-size: 30pt;
 	font-weight: 900;
-	margin-top: 20vh;
+	margin-top: 15vh;
 }
 
 /* Image Cards */
 
 .popupImageContainer {
-	margin-top: 15vh;
+	margin-top: 20vh;
 	display: flex;
 	justify-content: center;
 }
@@ -69,6 +70,7 @@ body {
 }
 
 .popupCardContainer > div {
+	position: relative;
 	padding: 20px;
 	height: 200px;
 	width: 150px;
@@ -98,7 +100,106 @@ body {
 	width: 165px;
 }
 
+.popupCardContainer > div > img {
+	border-radius: 50px;
+	width: 100px;
+	height: 100px;
+}
+
+/* Vote */
+
+.voteResultsContainer {
+	display: none;
+	position: absolute;
+	width: 100vw;
+	left: 0;
+	top: 30vh;
+	height: 70vh;
+	display: flex;
+	justify-content: center;
+}
+
+.voteResultsContainer > div {
+	margin-left: 10px;
+	margin-right: 10px;
+}
+
+.staticCard {
+	position: relative;
+	padding: 20px;
+	height: 200px;
+	width: 150px;
+	border-radius: 5px;
+	background-color: lightgrey;
+	text-align: center;
+	font-size: 18pt;
+	font-weight: 600;
+	color: rgba(0, 0, 0, 1);
+	opacity: 1;
+	transition: .3s;
+	z-index: 4;
+	margin-bottom: 10px;
+}
+
+.staticCard > img {
+	border-radius: 50px;
+	width: 100px;
+	height: 100px;
+}
+
 /* Main */
+
+.playersContainer {
+	width: 100vw;
+	height: 100px;
+	display: flex;
+	justify-content: center;
+}
+
+.playersContainer > div {
+	margin: 10px;
+}
+
+.playerBox {
+	position: relative;
+	height: 100px;
+	text-align: center;
+	border-radius: 5px;
+}
+
+.playerBox > img.profile {
+	margin-top: 5px;
+	border-radius: 50%;
+	width: 50%;
+}
+
+.playerBox > img.star {
+	position: absolute;
+	width: 30px;
+	height: 30px;
+	bottom: -5px;
+	right: -5px;
+	z-index: 2;
+}
+
+.playerBox > img.star-crossed {
+	position: absolute;
+	width: 30px;
+	height: 30px;
+	bottom: 5px;
+	right: -5px;
+}
+
+.playerBox > span {
+	position: absolute;
+	bottom: 0;
+	left: 0;
+	width: 100%;
+	text-align: center;
+	font-size: 18pt;
+	font-weight: 600;
+	border-radius: 10%;
+}
 
 .tableContainer {
 	position: absolute;
@@ -123,6 +224,8 @@ body {
 .laws {
 	height: 200px;
 }
+
+/* UI */
 
 .rolePicture {
 	position: absolute;
@@ -160,4 +263,22 @@ body {
 	-webkit-box-shadow: 0px 0px 5px 0px rgba(0, 0, 0, 0.75);
 	-moz-box-shadow: 0px 0px 5px 0px rgba(0, 0, 0, 0.75);
 	box-shadow: 0px 0px 5px 0px rgba(0, 0, 0, 0.75);
+}
+
+.spinner {
+	border: 4px solid rgba(200, 200, 200, 0.5); /* Light grey */
+	border-top: 4px solid rgb(100, 100, 100); /* Blue */
+	border-radius: 50%;
+	width: 20px;
+	height: 20px;
+	animation: spin 2s linear infinite;
+}
+
+@keyframes spin {
+	0% {
+		transform: rotate(0deg);
+	}
+	100% {
+		transform: rotate(360deg);
+	}
 }

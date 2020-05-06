@@ -9,9 +9,15 @@ class SelectionContext {
 	}
 
 	start(event) {
+		const titles = {
+			selectChancellor: 'a Chancellor',
+			selectPresident: 'a President',
+			selectKill: 'a Kill'
+		};
+
 		this.event = event;
 		this.container.style.display = 'block';
-		this.titleContainer.innerHTML = 'Select a ' + (event.type === 'selectChancellor' ? 'Chancellor' : 'President');
+		this.titleContainer.innerHTML = 'Select ' + titles[event.type];
 
 		if (this.cardContainer.childElementCount === 0) {
 			const totalPlayers = gameContext.players.length;
@@ -23,8 +29,9 @@ class SelectionContext {
 				element.id = 'select' + player.id;
 				element.style.border = '4px solid ' + player.color;
 				element.style.transform = 'rotate(' + baseDeg + 'deg)';
-				element.innerHTML = player.name;
+				element.innerHTML = `<img src="img/portraits/${player.image}.png" alt="profileImage">` + player.name;
 				element.addEventListener('click', () => this.sendSelection(player));
+
 				this.cardContainer.append(element);
 				baseDeg += 15;
 			}
@@ -44,7 +51,13 @@ class SelectionContext {
 			return;
 		}
 
-		const type = this.event.type === 'selectChancellor' ? 'selectedChancellor' : 'selectedPresident';
+		const reponseMethod = {
+			selectChancellor: 'selectedChancellor',
+			selectPresident: 'selectedPresident',
+			selectKill: 'selectedKill'
+		};
+
+		const type = reponseMethod[this.event.type];
 		this.socket.send(
 			JSON.stringify({
 				type: 'ingame',

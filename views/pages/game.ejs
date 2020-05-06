@@ -11,9 +11,11 @@
 <body>
     
     <!-- Ready Container -->
-    <div class="popupContainer" id="readyContainer">
+    <div class="popupContainer" id="readyContainer" style="z-index: 10;">
         <div class="readyCard card mb-3 border-primary boxShadow">
             <h3 class="card-header bg-primary">Waiting for players</h3>
+            <ul class="list-group list-group-flush" id="readyList">
+            </ul>
             <div class="card-body">
                 <div class="custom-control custom-checkbox">
                     <input type="checkbox" class="custom-control-input" id="readyCheckbox">
@@ -30,21 +32,29 @@
             <img class="boxShadow" id="yesImage" src="img/yes.png" alt="YES-IMG">
             <img class="boxShadow" id="noImage" src="img/no.png" alt="NO-IMG">
         </div>
+        <div class="voteResultsContainer" hidden></div>
     </div>
 
     <!-- Selection Container -->
     <div class="popupContainer" id="selectionContainer">
         <div class="popupTitle" id="selectionTitle"></div>
-        <div class="popupCardContainer" id="selectionCardContainer">
-
-        </div>
+        <div class="popupCardContainer" id="selectionCardContainer"></div>
     </div>
 
-    <%= gameid %>
+    <!-- Laws Container -->
+    <div class="popupContainer" id="lawsContainer">
+        <div class="popupTitle" id="lawsTitle"></div>
+        <div class="popupImageContainer" id="lawsImageContainer"></div>
+        <br>
+        <button type="button" class="btn btn-primary disabled" id="lawsConfirm">Confirm Selection</button>
+    </div>
 
+    <div class="playersContainer" id="playersContainer"></div>
+
+    <%= gameid %>
     <div class="gameStateContainer"></div>
 
-    <div class="tableContainer">
+    <!-- <div class="tableContainer">
         <div class="tableRow">
             <img class="laws" src="img/laws-fasho-8.png" alt="">
             <div class="pileContainer">
@@ -57,7 +67,7 @@
                 <img class="pile" src="img/discard-pile.png" alt="">
             </div>
         </div>
-    </div>
+    </div> -->
 
 
     <div class="ui-container">
@@ -66,9 +76,11 @@
     </div>
 
 
+    <script src="js/app/GameContext.js"></script>
     <script src="js/app/ReadyContext.js"></script>
     <script src="js/app/SelectionContext.js"></script>
     <script src="js/app/VoteContext.js"></script>
+    <script src="js/app/LawsContext.js"></script>
 
     <script src="js/storage.js"></script>
     <script src="js/app.js"></script>

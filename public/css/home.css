@@ -5,10 +5,14 @@ body {
 
 .card {
 	position: absolute;
-	top: 15%;
+	top: 10%;
 	left: 50%;
-	transform: translate(-50%, -50%);
+	transform: translate(-50%, 0);
 	width: 50vw;
+}
+
+.list-group:last-child {
+	border-bottom: none;
 }
 
 @media (max-width: 800px) {

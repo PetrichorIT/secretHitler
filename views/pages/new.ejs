@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secret Hitler</title>
+
+    <link rel="stylesheet" href="css/auth.css">
+    <link rel="stylesheet" href="css/bootstrap.min.css">
+</head>
+<body>
+    <form method="post" action="/new" class="card border-primary">
+        <h3 class="card-header bg-primary">Login</h3>
+        <div class="card-body">
+
+            <div class="form-group">
+                <label class="form-control-label" for="gameTitle">Enter Username here:</label>
+                <input type="text" placeholder="GameTitle..." class="form-control" id="gameTitle">
+                <div class="invalid-feedback">Invalid Game Title</div>
+                <div class="valid-feedback">Valid Game Title</div>
+            </div>
+
+            <button type="button" id="loginSubmit" class="btn btn-primary">Create</button>
+        </div>
+    </form>
+      <br>
+      <br>
+      <br>
+      <script src="js/storage.js"></script>
+      <script src="js/new.js"></script>
+</body>
+</html>

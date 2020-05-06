@@ -2,6 +2,7 @@ class ReadyContext {
 	constructor(socket) {
 		this.container = document.querySelector('#readyContainer');
 		this.checkbox = document.querySelector('#readyCheckbox');
+		this.list = document.querySelector('#readyList');
 
 		this.socket = socket;
 
@@ -26,6 +27,16 @@ class ReadyContext {
 				})
 			);
 		}
+	}
+
+	update(users) {
+		let str = '';
+		for (const user of users) {
+			str += `<li class="list-group-item d-flex justify-content-between align-items-center">${user.name}<span class="badge badge-${user.localState
+				? 'danger'
+				: 'success'} badge-pill">${user.localState ? 'Loading' : 'Ready'}</span></li>`;
+		}
+		this.list.innerHTML = str;
 	}
 
 	end() {

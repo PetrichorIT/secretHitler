@@ -4,10 +4,12 @@ const gameStateContainer = document.querySelector('.gameStateContainer');
 
 var socket;
 
+var username;
 var readyContext;
 var gameContext;
 var selectionContext;
 var voteContext;
+var lawsContext;
 
 function main(gameId) {
 	const sid = getStoredValue('sh.connect.sid') || false;
@@ -20,9 +22,11 @@ function main(gameId) {
 	socket = new WebSocket(socketUrl);
 
 	socket.onopen = () => {
+		gameContext = new GameContext();
 		readyContext = new ReadyContext(socket);
 		voteContext = new VoteContext(socket);
 		selectionContext = new SelectionContext(socket);
+		lawsContext = new LawsContext(socket);
 
 		socket.send(
 			JSON.stringify({
@@ -38,13 +42,19 @@ function main(gameId) {
 			switch (obj.type) {
 				case 'ingame':
 					switch (obj.event.type) {
+						// Connection Lifecycle
+
 						case 'requestReadyForGame':
 							readyContext.start();
 							break;
-
+						case 'waitingState':
+							readyContext.update(obj.event.users);
+							break;
 						case 'startup':
 							readyContext.end();
 							break;
+
+						// Main Lifecycle
 
 						case 'role':
 							if (!obj.event.role) return;
@@ -62,6 +72,9 @@ function main(gameId) {
 						case 'globalGameState':
 							updateGlobalGameState(obj.event);
 							break;
+						case 'localState':
+							gameContext.updateLocal(obj.event.players);
+							break;
 
 						case 'selectChancellor':
 							selectionContext.start(obj.event);
@@ -72,21 +85,38 @@ function main(gameId) {
 							voteContext.start(obj.event.chancellor);
 							break;
 						case 'votingEnded':
-							voteContext.end(obj.event.result);
+							voteContext.end(obj.event);
+							break;
+
+						// Laws
+						case 'presidentLaws':
+							lawsContext.start(obj.event);
+							break;
+
+						case 'chancellorLaws':
+							lawsContext.start(obj.event);
+							break;
 					}
 					break;
+				case 'whoami':
+					username = obj.username;
+					break;
+
 				case 'error':
 					alert(obj.error);
 					break;
 			}
 		} catch (err) {
-			print('Err', err);
+			console.error(err);
+			alert(err);
 		}
 	};
 }
 
 function updateGlobalGameState(event) {
-	gameContext = event;
+	gameContext.update(event);
+
+	// DEBUG
 	gameStateContainer.innerHTML = JSON.stringify(event);
 }
 
