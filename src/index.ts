@@ -33,6 +33,7 @@ app.use(express.static('public'));
 
 app.get('/', cookieParser(), (req, res) => {
 	fs.readdir('data/games', (err, gameBlueprints) => {
+		if (err) gameBlueprints = [];
 		const gameOverviews: { id: string; isOn: boolean; data: any | undefined }[] = [];
 		gameBlueprints.forEach((gameBp) => {
 			gameOverviews.push({ id: gameBp.substring(0, gameBp.length - 5), isOn: false, data: undefined });
