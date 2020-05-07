@@ -299,3 +299,10 @@ body {
 .buttonContainer > button {
 	margin: 0px 10px;
 }
+
+.symbolImage {
+	position: absolute;
+	height: 50px;
+	bottom: 5px;
+	left: 5px;
+}

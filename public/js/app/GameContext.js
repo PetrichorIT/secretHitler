@@ -7,7 +7,7 @@ class GameContext {
 	start() {
 		this.startedUp = true;
 		const width = Math.min(this.playersContainer.offsetWidth / this.players.length, 150);
-		console.log(width);
+
 		for (const player of this.players) {
 			const element = document.createElement('div');
 			element.classList.add('playerBox');
@@ -64,6 +64,24 @@ class GameContext {
 			spinner.style.top = '5px';
 			element.append(spinner);
 
+			if (knownHitler !== null && knownHitler === player.id) {
+				const hitlerSign = document.createElement('img');
+				hitlerSign.src = 'img/role-hitler.png';
+				hitlerSign.alt = 'isHitler';
+				hitlerSign.classList.add('symbolImage');
+				hitlerSign.classList.add('boxShadow');
+				element.append(hitlerSign);
+			}
+
+			if (knownFasho !== null && knownFasho === player.id) {
+				const fashoSign = document.createElement('img');
+				fashoSign.src = 'img/role-fasho.png';
+				fashoSign.alt = 'isFasho';
+				fashoSign.classList.add('symbolImage');
+				fashoSign.classList.add('boxShadow');
+				element.append(fashoSign);
+			}
+
 			this.playersContainer.append(element);
 		}
 	}
@@ -75,8 +93,6 @@ class GameContext {
 				this[key] = event[key];
 			}
 		}
-
-		console.log(this);
 
 		// UI Updates
 		if (!this.startedUp) this.start();
@@ -111,7 +127,7 @@ class GameContext {
 
 	updateLocal(players) {
 		for (let i = 0; i < players.length; i++) {
-			console.log('set to ' + !players[i]);
+			if (gameContext.players[i].alive === false) continue;
 			document.querySelector('#spinner-' + i).hidden = !players[i];
 		}
 	}

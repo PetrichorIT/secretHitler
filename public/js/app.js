@@ -12,6 +12,11 @@ var voteContext;
 var vetoContext;
 var lawsContext;
 var winContext;
+var inspectContext;
+
+let knownHitler = null;
+let knownFasho = null;
+let isDead = false;
 
 function main(gameId) {
 	const sid = getStoredValue('sh.connect.sid') || false;
@@ -30,6 +35,7 @@ function main(gameId) {
 		vetoContext = new VetoContext(socket);
 		selectionContext = new SelectionContext(socket);
 		lawsContext = new LawsContext(socket);
+		inspectContext = new InspectContext(socket);
 		winContext = new WinContext();
 
 		socket.send(
@@ -45,20 +51,28 @@ function main(gameId) {
 			const obj = JSON.parse(msg.data);
 			switch (obj.type) {
 				case 'ingame':
-					switch (obj.event.type) {
-						// Connection Lifecycle
+					if (obj.event.type.startsWith('select')) {
+						selectionContext.start(obj.event);
+						break;
+					}
 
+					if (obj.event.type.startsWith('inspect')) {
+						inspectContext.start(obj.event);
+						break;
+					}
+
+					switch (obj.event.type) {
 						case 'requestReadyForGame':
 							readyContext.start();
 							break;
+
 						case 'waitingState':
 							readyContext.update(obj.event.users);
 							break;
+
 						case 'startup':
 							readyContext.end();
 							break;
-
-						// Main Lifecycle
 
 						case 'role':
 							if (!obj.event.role) return;
@@ -71,20 +85,21 @@ function main(gameId) {
 								? 'img/role-hitler.png'
 								: obj.event.role.isFasho ? 'img/role-fasho.png' : 'img/role-liberal.png';
 							roleImg.src = roleImage;
+
+							console.log(obj.event);
+
+							if (obj.event.hitler !== undefined) knownHitler = obj.event.hitler;
+							if (obj.event.fasho !== undefined) knownFasho = obj.event.fasho;
 							break;
 
 						case 'globalGameState':
 							updateGlobalGameState(obj.event);
 							break;
+
 						case 'localState':
 							gameContext.updateLocal(obj.event.players);
 							break;
 
-						case 'selectChancellor':
-							selectionContext.start(obj.event);
-							break;
-
-						// VOTING
 						case 'voteChancellor':
 							voteContext.start(obj.event.chancellor);
 							break;
@@ -92,7 +107,6 @@ function main(gameId) {
 							voteContext.end(obj.event);
 							break;
 
-						// LAWS
 						case 'presidentLaws':
 							lawsContext.start(obj.event);
 							break;
@@ -105,16 +119,11 @@ function main(gameId) {
 							vetoContext.start();
 							break;
 
-						// Effects
-						case 'selectKill':
-							selectionContext.start(obj.event);
-							break;
-
 						case 'kill':
 							alert('You are dead');
+							isDead = true;
 							break;
 
-						// End
 						case 'win':
 							winContext.start(obj.event);
 							break;

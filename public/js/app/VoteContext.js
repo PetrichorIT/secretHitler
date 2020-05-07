@@ -31,6 +31,7 @@ class VoteContext {
 		if (this.voteResultsContainer.childElementCount === 0) {
 			for (const player of gameContext.players) {
 				const element = document.createElement('div');
+				element.id = 'voteResultBox' + player.id;
 
 				const playerCard = document.createElement('div');
 				playerCard.classList.add('staticCard');
@@ -66,19 +67,26 @@ class VoteContext {
 	}
 
 	end(event) {
+		this.container.style.display = 'block'; // For Dead Spectators
 		this.yesImage.style.display = 'none';
 		this.noImage.style.display = 'none';
 		this.titleContainer.innerHTML = 'Vote ' + (event.result ? 'successful' : 'failed');
 		this.titleContainer.style.fontSize = '50pt';
 
 		this.voteResultsContainer.hidden = false;
-		for (const username in event.results) {
-			const vote = event.results[username];
-			document.querySelector(`#${vote ? 'yes' : 'no'}-${username}`).hidden = false;
-			console.log(`#${vote ? 'yes' : 'no'}-${username} show`);
-			document.querySelector(`#${vote ? 'no' : 'yes'}-${username}`).hidden = true;
-			console.log(`#${vote ? 'no' : 'yes'}-${username} hide`);
+		for (const uname in event.results) {
+			const vote = event.results[uname];
+			document.querySelector(`#${vote ? 'yes' : 'no'}-${uname}`).hidden = false;
+			document.querySelector(`#${vote ? 'no' : 'yes'}-${uname}`).hidden = true;
 		}
+
+		const deadOnes = gameContext.players.filter((p) => p.alive === false);
+		deadOnes.forEach((player) => {
+			const box = document.querySelector('#voteResultBox' + player.id);
+			if (box) {
+				box.remove();
+			}
+		});
 
 		setTimeout(() => {
 			this.voteResultsContainer.hidden = true;

@@ -9,15 +9,11 @@ class SelectionContext {
 	}
 
 	start(event) {
-		const titles = {
-			selectChancellor: 'a Chancellor',
-			selectPresident: 'a President',
-			selectKill: 'a Kill'
-		};
+		const title = event.type.substring(6).split('_').join(' ');
 
 		this.event = event;
 		this.container.style.display = 'block';
-		this.titleContainer.innerHTML = 'Select ' + titles[event.type];
+		this.titleContainer.innerHTML = 'Select a' + title;
 
 		if (this.cardContainer.childElementCount === 0) {
 			const totalPlayers = gameContext.players.length;
@@ -51,18 +47,11 @@ class SelectionContext {
 			return;
 		}
 
-		const reponseMethod = {
-			selectChancellor: 'selectedChancellor',
-			selectPresident: 'selectedPresident',
-			selectKill: 'selectedKill'
-		};
-
-		const type = reponseMethod[this.event.type];
 		this.socket.send(
 			JSON.stringify({
 				type: 'ingame',
 				event: {
-					type: type,
+					type: this.event.type + '-response',
 					selection: player.id
 				}
 			})

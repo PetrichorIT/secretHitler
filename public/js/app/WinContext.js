@@ -6,6 +6,7 @@ class WinContext {
 	}
 
 	start(event) {
+		this.container.style.display = 'block';
 		this.titleContainer.innerHTML = (event.fashosWon ? 'Fashos' : 'Liberals') + ' won !';
 
 		socket.close();

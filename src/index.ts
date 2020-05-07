@@ -12,48 +12,50 @@ import Game from './Game';
 
 const db = jdb(new SyncAdapter('data/auth.json'));
 db.defaults({ sessions: [], users: [] }).write();
-const validSessions = db.get('sessions').value();
-db
-	.set(
-		'sessions',
-		validSessions.filter((v: any) => {
-			return new Date().getTime() - new Date(v.time).getTime() < 60 * 24 * 1000;
-		})
-	)
-	.write();
+// const validSessions = db.get('sessions').value();
+// db
+// 	.set(
+// 		'sessions',
+// 		validSessions.filter((v: any) => {
+// 			return new Date().getTime() - new Date(v.time).getTime() < 60 * 24 * 1000;
+// 		})
+// 	)
+// 	.write();
 
-console.log(validSessions);
+// console.log(validSessions);
 const clients: { [key: string]: ws[] } = {};
 const games: { [key: string]: Game } = {};
-const gameBlueprints = fs.readdirSync('data/games');
+// const gameBlueprints = fs.readdirSync('data/games');
 
 const app = expressWs(express()).app;
 app.set('view engine', 'ejs');
 app.use(express.static('public'));
 
 app.get('/', cookieParser(), (req, res) => {
-	const gameOverviews: { id: string; isOn: boolean; data: any | undefined }[] = [];
-	gameBlueprints.forEach((gameBp) => {
-		gameOverviews.push({ id: gameBp.substring(0, gameBp.length - 5), isOn: false, data: undefined });
-	});
-	for (const key in games) {
-		if (games.hasOwnProperty(key)) {
-			const game = games[key];
+	fs.readdir('data/games', (err, gameBlueprints) => {
+		const gameOverviews: { id: string; isOn: boolean; data: any | undefined }[] = [];
+		gameBlueprints.forEach((gameBp) => {
+			gameOverviews.push({ id: gameBp.substring(0, gameBp.length - 5), isOn: false, data: undefined });
+		});
+		for (const key in games) {
+			if (games.hasOwnProperty(key)) {
+				const game = games[key];
 
-			const index = gameOverviews.findIndex((v) => v.id === game.id);
-			if (index === -1) {
-				gameOverviews.push({ id: game.id, isOn: true, data: { players: game.players.length } });
-			} else {
-				gameOverviews[index].isOn = true;
-				gameOverviews[index].data = { players: game.players.length };
+				const index = gameOverviews.findIndex((v) => v.id === game.id);
+				if (index === -1) {
+					gameOverviews.push({ id: game.id, isOn: true, data: { players: game.players.length } });
+				} else {
+					gameOverviews[index].isOn = true;
+					gameOverviews[index].data = { players: game.players.length };
+				}
 			}
 		}
-	}
-	const session = db.get('sessions').find({ sid: req.cookies['sh.connect.sid'] }).value();
-	if (!session) {
-		return res.redirect('/login');
-	}
-	res.render('pages/home.ejs', { games: gameOverviews, username: session.username });
+		const session = db.get('sessions').find({ sid: req.cookies['sh.connect.sid'] }).value();
+		if (!session) {
+			return res.redirect('/login');
+		}
+		res.render('pages/home.ejs', { games: gameOverviews, username: session.username });
+	});
 });
 
 app.get('/new', cookieParser(), (req, res) => {
@@ -160,12 +162,14 @@ app.get('/:gameid', (req, res) => {
 		if (!ex) return res.status(400).json({ type: 'error', error: 'GameID does not exist' });
 		games[gameid] = new Game(gameid, (won) => {
 			delete games[gameid];
-			clients[gameid].forEach((c) => {
-				c.close();
-			});
-			clients[gameid] = [];
-			if (won) {
-				fs.unlinkSync('data/games/' + gameid + '.json');
+			if (clients[gameid]) {
+				clients[gameid].forEach((c) => {
+					c.close();
+				});
+				clients[gameid] = [];
+				if (won) {
+					fs.unlinkSync('data/games/' + gameid + '.json');
+				}
 			}
 		});
 	}
