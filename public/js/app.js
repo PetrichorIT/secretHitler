@@ -3,13 +3,15 @@ const roleImg = document.querySelector('.rolePicture');
 const gameStateContainer = document.querySelector('.gameStateContainer');
 
 var socket;
-
 var username;
+
 var readyContext;
 var gameContext;
 var selectionContext;
 var voteContext;
+var vetoContext;
 var lawsContext;
+var winContext;
 
 function main(gameId) {
 	const sid = getStoredValue('sh.connect.sid') || false;
@@ -25,8 +27,10 @@ function main(gameId) {
 		gameContext = new GameContext();
 		readyContext = new ReadyContext(socket);
 		voteContext = new VoteContext(socket);
+		vetoContext = new VetoContext(socket);
 		selectionContext = new SelectionContext(socket);
 		lawsContext = new LawsContext(socket);
+		winContext = new WinContext();
 
 		socket.send(
 			JSON.stringify({
@@ -88,13 +92,31 @@ function main(gameId) {
 							voteContext.end(obj.event);
 							break;
 
-						// Laws
+						// LAWS
 						case 'presidentLaws':
 							lawsContext.start(obj.event);
 							break;
 
 						case 'chancellorLaws':
 							lawsContext.start(obj.event);
+							break;
+
+						case 'requestingVeto':
+							vetoContext.start();
+							break;
+
+						// Effects
+						case 'selectKill':
+							selectionContext.start(obj.event);
+							break;
+
+						case 'kill':
+							alert('You are dead');
+							break;
+
+						// End
+						case 'win':
+							winContext.start(obj.event);
 							break;
 					}
 					break;

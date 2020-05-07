@@ -11,7 +11,7 @@ class GameContext {
 		for (const player of this.players) {
 			const element = document.createElement('div');
 			element.classList.add('playerBox');
-			element.id = 'box' + player.id;
+			element.id = 'box-' + player.id;
 			element.style.width = width + 'px';
 			element.style.backgroundColor = player.color;
 
@@ -104,6 +104,8 @@ class GameContext {
 			} else {
 				document.querySelector('#star-gold-crossed-' + player.id).hidden = true;
 			}
+
+			document.querySelector('#box-' + player.id).classList[player.alive ? 'remove' : 'add']('disabled');
 		}
 	}
 

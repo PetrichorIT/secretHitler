@@ -4,15 +4,16 @@ class LawsContext {
 		this.titleContainer = document.querySelector('#lawsTitle');
 		this.imageContainer = document.querySelector('#lawsImageContainer');
 		this.confirmButton = document.querySelector('#lawsConfirm');
+		this.vetoButton = document.querySelector('#vetoButton');
 
 		this.confirmButton.addEventListener('click', () => this.send());
+		this.vetoButton.addEventListener('click', () => this.veto());
 
 		this.socket = socket;
 		this.event;
 	}
 
 	start(event) {
-		console.log(event);
 		this.event = event;
 		this.selected = [];
 		const totalPlayers = event.cards.length;
@@ -21,6 +22,14 @@ class LawsContext {
 
 		this.container.style.display = 'block';
 		this.titleContainer.innerHTML = 'Select ' + (this.event.cards.length - 1);
+		const allowVeto = !event.vetoFailed;
+
+		if (allowVeto && this.event.cards.length === 2 && gameContext.fashoLaws.length === 5) {
+			this.vetoButton.hidden = false;
+		} else {
+			this.vetoButton.hidden = true;
+		}
+
 		for (let i = 0; i < event.cards.length; i++) {
 			const card = event.cards[i];
 
@@ -34,6 +43,7 @@ class LawsContext {
 			baseDeg += 15;
 		}
 	}
+
 	select(id) {
 		const index = this.selected.findIndex((v) => v === id);
 		if (index === -1) {
@@ -48,6 +58,13 @@ class LawsContext {
 			this.confirmButton.classList.remove('disabled');
 		} else {
 			this.confirmButton.classList.add('disabled');
+		}
+	}
+
+	veto() {
+		if (this.event.cards.length === 2 && gameContext.fashoLaws.length === 5) {
+			this.socket.send(JSON.stringify({ type: 'ingame', event: { type: 'chancellorVeto' } }));
+			this.end();
 		}
 	}
 

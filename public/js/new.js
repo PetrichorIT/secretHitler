@@ -23,7 +23,6 @@ function checkGameTitle() {
 
 function checkCreateData() {
 	const u = checkGameTitle();
-
 	if (u) {
 		var xhr = new XMLHttpRequest();
 		xhr.open('POST', '/new', true);

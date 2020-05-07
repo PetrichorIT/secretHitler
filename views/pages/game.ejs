@@ -35,6 +35,15 @@
         <div class="voteResultsContainer" hidden></div>
     </div>
 
+    <!-- Veto Container -->
+    <div class="popupContainer" id="vetoContainer" style="z-index: 8;">
+        <div class="popupTitle">Veto ?</div>
+        <div class="popupImageContainer">
+            <img class="boxShadow" id="vetoYesImage" src="img/yes.png" alt="YES-IMG">
+            <img class="boxShadow" id="vetoNoImage" src="img/no.png" alt="NO-IMG">
+        </div>
+    </div>
+
     <!-- Selection Container -->
     <div class="popupContainer" id="selectionContainer">
         <div class="popupTitle" id="selectionTitle"></div>
@@ -46,8 +55,23 @@
         <div class="popupTitle" id="lawsTitle"></div>
         <div class="popupImageContainer" id="lawsImageContainer"></div>
         <br>
-        <button type="button" class="btn btn-primary disabled" id="lawsConfirm">Confirm Selection</button>
+        <div class="buttonContainer">
+            <button type="button" class="btn btn-primary disabled" id="lawsConfirm">Confirm Selection</button>
+            <button type="button" class="btn btn-danger" id="vetoButton" hidden>Veto</button>
+        </div>
     </div>
+
+    <div class="popupContainer" id="winContainer">
+        <div class="readyCard card mb-3 border-primary boxShadow">
+            <h3 class="card-header bg-primary" id="winTitle"></h3>
+            <ul class="list-group list-group-flush" id="winList">
+            </ul>
+            <div class="card-body">
+                <button type="button" class="btn btn-primary" onclick="window.location = '/';">Main Menu</button>
+            </div>
+        </div>
+    </div>
+
 
     <div class="playersContainer" id="playersContainer"></div>
 
@@ -81,6 +105,8 @@
     <script src="js/app/SelectionContext.js"></script>
     <script src="js/app/VoteContext.js"></script>
     <script src="js/app/LawsContext.js"></script>
+    <script src="js/app/VetoContext.js"></script>
+    <script src="js/app/WinContext.js"></script>
 
     <script src="js/storage.js"></script>
     <script src="js/app.js"></script>

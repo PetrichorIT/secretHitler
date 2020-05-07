@@ -11,8 +11,9 @@ const GameStates = {
 	presidentLaws: 6,
 	chancellorLaws: 7,
 	veto: 8,
-	applyLaws: 9,
+	prepareKill: 9,
 	selectKill: 10,
+
 	selectPresident: 11,
 	inspectPlayer: 12,
 	inspectLaws: 13
@@ -23,7 +24,7 @@ type EventType = { type: string; [key: string]: any };
 
 export class Game {
 	id: string;
-	abortHandler: () => void;
+	dismissGameHandler: (won: boolean) => void;
 
 	blocked: boolean;
 	paused: boolean;
@@ -52,8 +53,8 @@ export class Game {
 
 	db: Wrapper | null = null;
 
-	constructor(id: string, abortHandler: () => void) {
-		this.abortHandler = abortHandler;
+	constructor(id: string, dismissGameHandler: (won: boolean) => void) {
+		this.dismissGameHandler = dismissGameHandler;
 		this.paused = true;
 		this.blocked = false;
 		this.id = id;
@@ -68,7 +69,13 @@ export class Game {
 
 	private save() {
 		if (this.db === null) {
-			this.db = jdb(new SyncAdapter('data/games/' + this.id + '.json'));
+			try {
+				this.db = jdb(new SyncAdapter('data/games/' + this.id + '.json'));
+			} catch (e) {
+				console.log(e);
+				this.abort();
+				return;
+			}
 		}
 
 		const gameData: any = {
@@ -92,6 +99,7 @@ export class Game {
 					localState: p.localState,
 					color: p.color,
 					image: p.image,
+					alive: p.alive,
 					lastEvent: p.lastEvent
 				};
 			})
@@ -129,6 +137,7 @@ export class Game {
 				image: p.image,
 				color: p.color,
 				lastEvent: p.lastEvent,
+				alive: p.alive,
 				client: null
 			};
 		});
@@ -162,6 +171,7 @@ export class Game {
 			this.players[i].role = roles[i];
 			this.players[i].color = colors[i];
 			this.players[i].image = images[i];
+			this.players[i].alive = true;
 			this.send(this.players[i], { type: 'role', role: roles[i] });
 		}
 
@@ -223,9 +233,22 @@ export class Game {
 				if (this.currentPresident === this.players.length) this.currentPresident = 0;
 				print('Game', '#' + this.id + ' selectingNewPresident: ' + this.currentPresident);
 
+				// Check if alive
+				if (this.players[this.currentPresident].alive === false) {
+					this.tryUpdateState(); // Move to next president
+					return;
+				}
+
 				const ignorePlayers = [ this.previousPresident, this.previousChancellor, this.currentPresident ].filter(
 					(v) => v !== null
 				);
+				for (let index = 0; index < this.players.length; index++) {
+					if (ignorePlayers.findIndex((p) => p === index) === -1) {
+						if (this.players[index].alive === false) {
+							ignorePlayers.push(index);
+						}
+					}
+				}
 
 				print('Game', '#' + this.id + ' selectingNewChancellor: not(' + ignorePlayers + ')');
 
@@ -338,19 +361,84 @@ export class Game {
 
 				break;
 
-			case GameStates.presidentLaws:
+			case GameStates.chancellorLaws:
 				if (this.currentSelection === null) return;
 				if (this.currentChancellor === null) return;
 				this.discardPile.push(this.currentSelection.revoked[0]);
 
+				this.players[this.currentChancellor!].localState = false;
+				this.previousChancellor = this.currentChancellor;
+				this.previousPresident = this.currentPresident;
+
 				if (this.currentSelection.selected[0]) {
 					this.fashoLaws.push(true);
+
+					if (this.fashoLaws.length === 6) {
+						return this.win(true);
+					}
+
+					// CheckForEffects
+					// Missing
+
+					const effectState = effectDistributions[this.players.length][this.fashoLaws.length - 1];
+
+					if (effectState) {
+						print('Game', '#' + this.id + ' EffectStatePrep: ' + effectState);
+						this.gameState = effectState;
+						this.tryUpdateState();
+						return;
+						// Remmeber to unset currenPreident / Chancellor
+						// Effect
+					} else {
+						this.gameState = GameStates.nextPresident;
+						this.currentChancellor = null;
+						this.boradcastGameState();
+						setTimeout(() => {
+							this.tryUpdateState();
+						}, 3000);
+					}
 				} else {
 					this.liberalLaws.push(true);
+					if (this.liberalLaws.length === 5) {
+						return this.win(false);
+					}
+					this.gameState = GameStates.nextPresident;
+					this.currentChancellor = null;
+					this.boradcastGameState();
+					setTimeout(() => {
+						this.tryUpdateState();
+					}, 3000);
+				}
+				break;
+
+			// Effect States
+
+			case GameStates.prepareKill:
+				this.players[this.currentPresident].localState = true;
+				this.gameState = GameStates.selectKill;
+				this.currentSelection = null;
+				this.boradcastGameState();
+				this.send(this.players[this.currentPresident], {
+					type: 'selectKill',
+					ignorePlayers: this.players.filter((p) => p.alive === false)
+				});
+				break;
+			case GameStates.selectKill:
+				// if (!this.currentSelection) return;
+				console.log('killing' + this.currentSelection);
+
+				this.players[this.currentSelection].alive = false;
+				this.send(this.players[this.currentSelection], { type: 'kill' });
+				this.boradcastGameState();
+				if (this.players[this.currentSelection].role.isHitler) {
+					this.win(false);
+					return;
 				}
 
-				// EFFECTS
-
+				this.gameState = GameStates.nextPresident;
+				setTimeout(() => {
+					this.tryUpdateState();
+				}, 2000);
 				break;
 		}
 	}
@@ -363,6 +451,7 @@ export class Game {
 				id: i,
 				name: this.players[i].name,
 				color: this.players[i].color,
+				alive: this.players[i].alive,
 				role: this.players[i].role
 			});
 		}
@@ -371,6 +460,7 @@ export class Game {
 			players: exportPlayers,
 			fashosWon
 		});
+		this.dismissGameHandler(true);
 	}
 
 	private broadcastLocalState() {
@@ -386,7 +476,8 @@ export class Game {
 				id: i,
 				name: this.players[i].name,
 				color: this.players[i].color,
-				image: this.players[i].image
+				image: this.players[i].image,
+				alive: this.players[i].alive
 			});
 		}
 
@@ -467,6 +558,14 @@ export class Game {
 			if (this.gameState === GameStates.chancellorLaws && lastEvent.type === 'chancellorLaws') {
 				this.send(this.players[index], lastEvent);
 			}
+
+			if (this.gameState === GameStates.veto && lastEvent.type === 'requestingVeto') {
+				this.send(this.players[index], lastEvent);
+			}
+
+			if (this.gameState === GameStates.selectKill && lastEvent.type === 'selectKill') {
+				this.send(this.players[index], lastEvent);
+			}
 		}
 	}
 
@@ -495,7 +594,7 @@ export class Game {
 
 	private abort() {
 		this.broadcast({ type: 'abort' });
-		this.abortHandler();
+		this.dismissGameHandler(false);
 	}
 
 	recive(username: string, event: any) {
@@ -509,6 +608,7 @@ export class Game {
 			}
 			return;
 		}
+		if (this.players.find((p) => p.name === username).alive === false) return;
 		switch (event.type) {
 			case 'selectedChancellor':
 				if (username !== this.currentSelectorName)
@@ -539,25 +639,54 @@ export class Game {
 				this.broadcastLocalState();
 				this.tryUpdateState();
 				break;
+
+			// Kinda out of bounds
+
+			case 'chancellorVeto':
+				print('Game', '#' + this.id + ' chancellorVeto');
+				this.currentSelection = this.players[this.currentChancellor!].lastEvent;
+				this.players[this.currentPresident].localState = true;
+				this.players[this.currentChancellor!].localState = false;
+				this.gameState = GameStates.veto;
+				this.boradcastGameState();
+				this.send(this.players[this.currentPresident], { type: 'requestingVeto' });
+				break;
+
+			case 'presidentVeto':
+				print('Game', '#' + this.id + ' presidentVeto' + event.veto);
+				this.players[this.currentPresident].localState = false;
+				if (event.veto) {
+					this.gameState = GameStates.nextPresident;
+					for (const card of this.currentSelection.cards) {
+						this.discardPile.push(card);
+					}
+
+					this.currentChancellor = null;
+					this.tryUpdateState();
+				} else {
+					this.gameState = GameStates.chancellorLaws;
+					this.players[this.currentChancellor!].localState = true;
+					this.send(this.players[this.currentChancellor!], {
+						type: 'chancellorLaws',
+						cards: this.currentSelection.cards,
+						vetoFailed: true
+					});
+
+					this.currentSelection = null;
+				}
+				break;
+
+			// Effeczs
+			case 'selectedKill':
+				print('Game', '#' + this.id + ' SelectedKill ' + event.selection);
+				this.currentSelection = event.selection;
+				this.players[this.currentPresident].localState = false;
+				this.broadcastLocalState();
+				this.tryUpdateState();
+				break;
 		}
 	}
 }
-
-/*
-
-players: [Player]
-
-{
-    localState: working | waiting = true | false
-    client: WebSocket
-    color: Color
-    role?: {
-        isFasho: Bool
-        isHitler: Bool
-    }
-}
-
-*/
 
 // Bool is Fasho
 const lawCards = [ true, true, true, true, true, true, true, true, true, false, false, false, false, false, false ];
@@ -607,6 +736,10 @@ const roleDistributions: { [key: number]: any } = {
 			isHitler: false
 		}
 	]
+};
+
+const effectDistributions: { [key: number]: any } = {
+	2: [ GameStates.prepareKill, undefined, undefined, 'prepareKillPlayer', 'prepareKillPlayer', undefined ]
 };
 
 export default Game;

@@ -12,13 +12,15 @@ import Game from './Game';
 
 const db = jdb(new SyncAdapter('data/auth.json'));
 db.defaults({ sessions: [], users: [] }).write();
-const validSessions = db
-	.get('sessions')
-	.findall((s) => {
-		return new Date().getTime() - new Date(s.timestamp).getTime() < 240 * 60 * 1000;
-	})
-	.map((w) => w.value());
-db.set('sessions', validSessions).write();
+const validSessions = db.get('sessions').value();
+db
+	.set(
+		'sessions',
+		validSessions.filter((v: any) => {
+			return new Date().getTime() - new Date(v.time).getTime() < 60 * 24 * 1000;
+		})
+	)
+	.write();
 
 console.log(validSessions);
 const clients: { [key: string]: ws[] } = {};
@@ -62,7 +64,7 @@ app.get('/new', cookieParser(), (req, res) => {
 	res.render('pages/new.ejs');
 });
 
-app.post('/new', cookieParser(), express.json(), (req, res) => {
+app.post('/new', cookieParser(), express.json(), express.urlencoded({ extended: true }), (req, res) => {
 	const session = db.get('sessions').find({ sid: req.cookies['sh.connect.sid'] }).value();
 	if (!session) {
 		return res.redirect('/login');
@@ -156,7 +158,16 @@ app.get('/:gameid', (req, res) => {
 	if (!games[gameid]) {
 		const ex = fs.existsSync(`data/games/${req.params.gameid}.json`);
 		if (!ex) return res.status(400).json({ type: 'error', error: 'GameID does not exist' });
-		games[gameid] = new Game(gameid, () => delete games[gameid]);
+		games[gameid] = new Game(gameid, (won) => {
+			delete games[gameid];
+			clients[gameid].forEach((c) => {
+				c.close();
+			});
+			clients[gameid] = [];
+			if (won) {
+				fs.unlinkSync('data/games/' + gameid + '.json');
+			}
+		});
 	}
 
 	res.render('pages/game.ejs', { gameid: req.params.gameid });
