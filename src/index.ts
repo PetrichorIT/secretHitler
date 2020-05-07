@@ -228,7 +228,9 @@ app.ws('/:gameid', (ws, req) => {
 app.all('*', function(req, res) {
 	return res.status(404).end('404 - Not Found');
 });
-app.listen(80, () => console.log('Running at port 80'));
+
+let PORT = process.env.PORT || 80;
+app.listen(PORT, () => console.log('Running at port 80'));
 
 const error = (ws: ws, error: string) => {
 	print('Error', error);
