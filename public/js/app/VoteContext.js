@@ -20,10 +20,15 @@ class VoteContext {
 	}
 
 	start(playerId) {
+		console.log(playerId);
 		this.canidateId = playerId;
 		this.container.style.display = 'block';
 
 		let index = gameContext.players.findIndex((p) => p.id === playerId);
+		if (index === -1) {
+			console.log(this);
+			return;
+		}
 		let name = gameContext.players[index].name;
 
 		this.titleContainer.innerHTML = 'Vote for ' + name;

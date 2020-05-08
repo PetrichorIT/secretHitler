@@ -136,6 +136,8 @@ export class Game {
 			this.db = jdb(new SyncAdapter('data/games/' + this.id + '.json'));
 		}
 
+		print('Game', '#' + this.id + ' Loading Game');
+
 		const gameData = this.db.get('gamedata').value();
 		if (!gameData) return;
 
@@ -165,7 +167,6 @@ export class Game {
 		});
 
 		this.paused = true;
-
 		this.tryUpdateState();
 	}
 
@@ -305,12 +306,11 @@ export class Game {
 	// State Handlers
 
 	private handleState_startup() {
-		print('Game', '#' + this.id + ' Startup');
 		print(
 			'Game',
 			'#' +
 				this.id +
-				' Players: ' +
+				' Started Game with players: ' +
 				this.players.map((v) => {
 					return v.name;
 				})
@@ -787,10 +787,11 @@ export class Game {
 	addPlayer(player: any, client: any) {
 		let index = this.players.findIndex((p) => p.name === player.username);
 		if (index >= 0) {
+			print('Game', '#' + this.id + " Reconnected player to game '" + player.username);
 			this.reconnectClient(index, client);
 		} else {
-			// New Join
-			if (this.gameState !== GameStates.invalid) throw new Error('Canno Join');
+			print('Game', '#' + this.id + " Added player to game '" + player.username);
+			if (this.gameState !== GameStates.invalid) throw new Error('Cannot Join');
 			this.players.push({ name: player.username, client, localState: true });
 			index = this.players.length - 1;
 		}
@@ -836,7 +837,7 @@ export class Game {
 		this.players[index].client = null;
 		if (this.players[index].alive === true && this.paused === false) {
 			this.save();
-			print('Game', 'Relevant Client lost');
+			print('Game', '#' + this.id + ' LostRelevantClient');
 			setTimeout(() => {
 				if (!this.players[index]) return;
 				if (this.players[index].client === null) {
@@ -861,8 +862,6 @@ export class Game {
 		if (this.players.find((p) => p.name === username)!.alive === false) return;
 		switch (event.type) {
 			case 'selectChancellor-response':
-				if (username !== this.currentSelectorName)
-					return print('Game', '#' + this.id + ' selectedChancellor: personMissmatch');
 				this.currentSelection = event.selection;
 				this.players[this.currentPresident].localState = false;
 				this.broadcastLocalState();
@@ -889,8 +888,6 @@ export class Game {
 				this.broadcastLocalState();
 				this.tryUpdateState();
 				break;
-
-			// Kinda out of bounds
 
 			case 'chancellorVeto':
 				print('Game', '#' + this.id + ' chancellorVeto');

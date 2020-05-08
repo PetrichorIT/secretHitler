@@ -6,9 +6,16 @@ class WinContext {
 	}
 
 	start(event) {
-		this.container.style.display = 'block';
-		this.titleContainer.innerHTML = (event.fashosWon ? 'Fashos' : 'Liberals') + ' won !';
+		if (event.type === 'win') {
+			this.container.style.display = 'block';
+			this.titleContainer.innerHTML = (event.fashosWon ? 'Fashos' : 'Liberals') + ' won !';
+			socket.close();
+		}
 
-		socket.close();
+		if (event.type === 'abort') {
+			this.container.style.display = 'block';
+			this.titleContainer.innerHTML = 'Game paused';
+			socket.close();
+		}
 	}
 }

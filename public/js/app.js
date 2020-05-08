@@ -121,6 +121,10 @@ function main(gameId) {
 							isDead = true;
 							break;
 
+						case 'abort':
+							winContext.start(obj.event);
+							break;
+
 						case 'win':
 							winContext.start(obj.event);
 							break;
