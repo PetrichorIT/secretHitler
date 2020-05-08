@@ -1,6 +1,13 @@
 class GameContext {
 	constructor() {
 		this.playersContainer = document.querySelector('#playersContainer');
+		this.fashoLawsBg = document.querySelector('#fashoLawsBg');
+		this.fashoLawsContainer = document.querySelector('.overlayContainerFasho');
+		this.liberalLawsContainer = document.querySelector('.overlayContainerLiberal');
+		this.drawPileContainer = document.querySelector('#drawPile');
+		this.discardPileContainer = document.querySelector('#discardPile');
+		this.stateLabel = document.querySelector('.stateLabel');
+
 		this.startedUp = false;
 	}
 
@@ -94,7 +101,31 @@ class GameContext {
 			}
 		}
 
-		// UI Updates
+		// Set Fasho Laws Background
+		let nPlayers = this.players.length;
+		if (nPlayers % 2 === 1) {
+			nPlayers += 1;
+		}
+		const imgSrc = 'img/laws-fasho-' + nPlayers + '.png';
+		if (this.fashoLawsBg.src !== imgSrc && nPlayers >= 5) {
+			this.fashoLawsBg.src = imgSrc;
+		}
+
+		// Update Piles / States
+		this.drawPileContainer.innerHTML = this.drawPile;
+		this.discardPileContainer.innerHTML = this.discardPile;
+		this.stateLabel.innerHTML = gameStateTranslate[this.gameState];
+
+		// Update noGov
+		for (let i = 0; i < 4; i++) {
+			if (i === this.noGovermentCounter) {
+				document.querySelector('#noGov' + i).hidden = false;
+			} else {
+				document.querySelector('#noGov' + i).hidden = true;
+			}
+		}
+
+		// Update Players
 		if (!this.startedUp) this.start();
 		for (const player of this.players) {
 			if (player.id === this.currentPresident) {
@@ -123,6 +154,13 @@ class GameContext {
 
 			document.querySelector('#box-' + player.id).classList[player.alive ? 'remove' : 'add']('disabled');
 		}
+
+		for (let i = 1; i <= 6; i++) {
+			document.querySelector('#tableLawFasho-' + i).hidden = i > this.fashoLaws.length;
+		}
+		for (let i = 1; i <= 5; i++) {
+			document.querySelector('#tableLawLiberal-' + i).hidden = i > this.liberalLaws.length;
+		}
 	}
 
 	updateLocal(players) {
@@ -132,3 +170,22 @@ class GameContext {
 		}
 	}
 }
+
+const gameStateTranslate = {
+	1: 'Invalid',
+	2: 'Starting Game',
+	3: 'Selecting next president',
+	4: 'Selecting chancellor',
+	5: 'Vote for chancellor',
+	6: 'President make laws',
+	7: 'Chancellor makes laws',
+	8: 'Veto',
+	9: '#internal pSelectKill',
+	10: 'Selecting player to kill',
+	11: '#interal pSelectPresident',
+	12: 'Selecting player as next president',
+	13: '#internal pSelectInspectPlayer',
+	14: 'Selecting Player to reveal',
+	15: '#internal pSelectInspectLaw',
+	16: 'Revealing next laws'
+};

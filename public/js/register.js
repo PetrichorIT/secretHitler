@@ -67,8 +67,6 @@ function checkRegisterData() {
 	const p = checkPasswordField();
 	const p2 = checkPassword2Field();
 
-	console.log(username, password);
-
 	if (u && p && p2) {
 		var xhr = new XMLHttpRequest();
 		xhr.open('POST', '/register', true);

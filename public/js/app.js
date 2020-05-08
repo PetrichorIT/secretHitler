@@ -1,6 +1,5 @@
 const factionImg = document.querySelector('.factionPicture');
 const roleImg = document.querySelector('.rolePicture');
-const gameStateContainer = document.querySelector('.gameStateContainer');
 
 var socket;
 var username;
@@ -86,14 +85,12 @@ function main(gameId) {
 								: obj.event.role.isFasho ? 'img/role-fasho.png' : 'img/role-liberal.png';
 							roleImg.src = roleImage;
 
-							console.log(obj.event);
-
 							if (obj.event.hitler !== undefined) knownHitler = obj.event.hitler;
 							if (obj.event.fasho !== undefined) knownFasho = obj.event.fasho;
 							break;
 
 						case 'globalGameState':
-							updateGlobalGameState(obj.event);
+							gameContext.update(event);
 							break;
 
 						case 'localState':
@@ -134,7 +131,9 @@ function main(gameId) {
 					break;
 
 				case 'error':
-					alert(obj.error);
+					if ((obj.error = '_invalid_sid')) {
+						window.location = '/login';
+					}
 					break;
 			}
 		} catch (err) {
@@ -142,22 +141,4 @@ function main(gameId) {
 			alert(err);
 		}
 	};
-}
-
-function updateGlobalGameState(event) {
-	gameContext.update(event);
-
-	// DEBUG
-	gameStateContainer.innerHTML = JSON.stringify(event);
-}
-
-// GLOBAL
-
-function sendEvent(event) {
-	socket.send(
-		JSON.stringify({
-			type: 'ingame',
-			event: event
-		})
-	);
 }

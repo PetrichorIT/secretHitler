@@ -66,7 +66,6 @@ app.post('/new', cookieParser(), express.json(), express.urlencoded({ extended: 
 	fs.writeFile('data/games/' + gameTitle + '.json', '{}', (err) => {
 		if (err) return res.end(err);
 		res.redirect('/' + gameTitle);
-		console.log('redirected');
 	});
 });
 
@@ -192,7 +191,12 @@ app.ws('/:gameid', (ws, req) => {
 
 					print('Ws', 'Player logged into game');
 					ws.send(JSON.stringify({ type: 'whoami', username: sessionUser.username }));
-					game.addPlayer(sessionUser, ws);
+					try {
+						game.addPlayer(sessionUser, ws);
+					} catch (e) {
+						error(ws, '_invalid_player');
+						ws.close();
+					}
 
 					break;
 

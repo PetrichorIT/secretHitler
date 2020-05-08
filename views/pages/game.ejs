@@ -61,6 +61,7 @@
         </div>
     </div>
 
+    <!-- Reveal Container -->
     <div class="popupContainer" id="revealContainer">
         <div class="popupImageContainer" id="revealImageContainer"></div>
         <br>
@@ -80,25 +81,51 @@
     </div>
 
 
-    <div class="playersContainer" id="playersContainer"></div>
-
-    <%= gameid %>
-    <div class="gameStateContainer"></div>
-
-    <!-- <div class="tableContainer">
+    <!-- MAIN -->
+    <div class="playersContainer" id="playersContainer" style="z-index: 2;"></div>
+    <div class="stateLabel">Waiting for players</div>
+    <div class="tableContainer" style="z-index: -2;">
         <div class="tableRow">
-            <img class="laws" src="img/laws-fasho-8.png" alt="">
+            <div class="lawsContainer">
+                <div class="overlayContainerFasho">
+                    <img class="law" src="img/law-fasho.png" id="tableLawFasho-1" alt="">
+                    <img class="law" src="img/law-fasho.png" id="tableLawFasho-2" alt="">
+                    <img class="law" src="img/law-fasho.png" id="tableLawFasho-3"  alt="">
+                    <img class="law" src="img/law-fasho.png" id="tableLawFasho-4" alt="">
+                    <img class="law" src="img/law-fasho.png" id="tableLawFasho-5" alt="">
+                    <img class="law" src="img/law-fasho.png" id="tableLawFasho-6" alt="">
+                </div>
+                <img class="lawsImage" id="fashoLawsBg" src="img/laws-fasho-8.png" alt="">
+            </div>
             <div class="pileContainer">
+                <div id="drawPile">12</div>
                 <img class="pile" src="img/draw-pile.png" alt="">
             </div>
         </div>
         <div class="tableRow">
-            <img class="laws" src="img/laws-liberal.png" alt="">
+            <div class="lawsContainer">
+                <div class="overlayContainerLiberal">
+                    <img class="law" src="img/law-liberal.png" id="tableLawLiberal-1" alt="">
+                    <img class="law" src="img/law-liberal.png" id="tableLawLiberal-2" alt="">
+                    <img class="law" src="img/law-liberal.png" id="tableLawLiberal-3" alt="">
+                    <img class="law" src="img/law-liberal.png" id="tableLawLiberal-4" alt="">
+                    <img class="law" src="img/law-liberal.png" id="tableLawLiberal-5" alt="">
+
+
+                    <img class="noGovCoin" id="noGov0" src="img/coin.png" alt="">
+                    <img class="noGovCoin" id="noGov1" src="img/coin.png" alt="">
+                    <img class="noGovCoin" id="noGov2" src="img/coin.png" alt="">
+                    <img class="noGovCoin" id="noGov3" src="img/coin.png" alt="">
+                </div>
+                
+                <img class="lawsImage" src="img/laws-liberal.png" alt="">
+            </div>
             <div class="pileContainer">
+                <div id="discardPile">12</div>
                 <img class="pile" src="img/discard-pile.png" alt="">
             </div>
         </div>
-    </div> -->
+    </div>
 
 
     <div class="ui-container">

@@ -402,6 +402,7 @@ export class Game {
 			print('Game', '#' + this.id + " Vote for '" + this.candiateChancellor + ' successfull');
 
 			this.currentChancellor = this.candiateChancellor;
+			this.noGovermentCounter = 0;
 
 			this.blocked = true;
 			this.broadcast({ type: 'votingEnded', result: true, results: this.currentSelection });
@@ -436,6 +437,7 @@ export class Game {
 			}, 3500);
 		} else {
 			print('Game', '#' + this.id + " Vote for '" + this.currentChancellor + ' failed');
+			this.noGovermentCounter += 1;
 			this.gameState = GameStates.nextPresident;
 			this.currentChancellor = null;
 			this.blocked = true;
@@ -443,6 +445,47 @@ export class Game {
 			this.broadcast({ type: 'votingEnded', result: false, results: this.currentSelection });
 			setTimeout(() => {
 				this.blocked = false;
+				if (this.noGovermentCounter === 3) {
+					this.noGovermentCounter = 0;
+					if (this.drawPile.length === 0) {
+						this.discardPile.sort(() => Math.random() - 0.5);
+						for (const card of this.discardPile) {
+							this.drawPile.push(card);
+						}
+						this.discardPile = [];
+					}
+
+					const card = this.drawPile.shift();
+					if (card) {
+						this.fashoLaws.push(true);
+
+						if (this.fashoLaws.length === 6) {
+							return this.win(true);
+						}
+
+						this.gameState = GameStates.nextPresident;
+						this.currentChancellor = null;
+						this.boradcastGameState();
+						setTimeout(() => {
+							this.tryUpdateState();
+						}, 1000);
+						return;
+					} else {
+						this.liberalLaws.push(false);
+
+						if (this.liberalLaws.length === 5) {
+							return this.win(true);
+						}
+
+						this.gameState = GameStates.nextPresident;
+						this.currentChancellor = null;
+						this.boradcastGameState();
+						setTimeout(() => {
+							this.tryUpdateState();
+						}, 1000);
+						return;
+					}
+				}
 				this.tryUpdateState();
 			}, 3500);
 		}
@@ -479,9 +522,6 @@ export class Game {
 			if (this.fashoLaws.length === 6) {
 				return this.win(true);
 			}
-
-			// CheckForEffects
-			// Missing
 
 			const effectState = this.effects[this.fashoLaws.length - 1];
 
@@ -645,6 +685,7 @@ export class Game {
 	private handleState_inspectLaws() {
 		this.currentChancellor = null;
 		this.gameState = GameStates.nextPresident;
+		this.boradcastGameState();
 		this.tryUpdateState();
 	}
 
@@ -686,6 +727,7 @@ export class Game {
 
 		this.broadcast({
 			type: 'globalGameState',
+			gameState: this.gameState,
 			players: exportPlayers,
 			currentChancellor: this.currentChancellor,
 			currentPresident: this.currentPresident,
@@ -762,6 +804,8 @@ export class Game {
 
 	private reconnectClient(index: number, client: any) {
 		this.players[index].client = client;
+
+		if (this.players[index].alive === false) return;
 		if (this.paused) {
 			this.players[index].localState = true;
 		}
@@ -789,15 +833,18 @@ export class Game {
 		let index = this.players.findIndex((p) => p.name === username);
 		if (index === -1) return;
 
-		this.save();
 		this.players[index].client = null;
-		setTimeout(() => {
-			if (!this.players[index]) return;
-			if (this.players[index].client === null) {
-				this.players.splice(index, 1);
-				this.abort();
-			}
-		}, TIMEOUT);
+		if (this.players[index].alive === true && this.paused === false) {
+			this.save();
+			print('Game', 'Relevant Client lost');
+			setTimeout(() => {
+				if (!this.players[index]) return;
+				if (this.players[index].client === null) {
+					this.players.splice(index, 1);
+					this.abort();
+				}
+			}, TIMEOUT);
+		}
 	}
 
 	recive(username: string, event: EventType) {
