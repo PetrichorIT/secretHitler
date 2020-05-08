@@ -90,7 +90,7 @@ function main(gameId) {
 							break;
 
 						case 'globalGameState':
-							gameContext.update(event);
+							gameContext.update(obj.event);
 							break;
 
 						case 'localState':
