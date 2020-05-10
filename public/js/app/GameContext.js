@@ -114,7 +114,6 @@ class GameContext {
 		// Update Piles / States
 		this.drawPileContainer.innerHTML = this.drawPile;
 		this.discardPileContainer.innerHTML = this.discardPile;
-		this.stateLabel.innerHTML = gameStateTranslate[this.gameState];
 
 		// Update noGov
 		for (let i = 0; i < 4; i++) {
@@ -163,11 +162,13 @@ class GameContext {
 		}
 	}
 
-	updateLocal(players) {
-		for (let i = 0; i < players.length; i++) {
+	updateLocal(event) {
+		for (let i = 0; i < event.players.length; i++) {
 			if (gameContext.players[i].alive === false) continue;
-			document.querySelector('#spinner-' + i).hidden = !players[i];
+			document.querySelector('#spinner-' + i).hidden = !event.players[i];
 		}
+
+		this.stateLabel.innerHTML = gameStateTranslate[this.gameState];
 	}
 }
 

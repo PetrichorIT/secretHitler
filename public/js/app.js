@@ -66,7 +66,7 @@ function main(gameId) {
 							break;
 
 						case 'waitingState':
-							readyContext.update(obj.event.users);
+							readyContext.update(obj.event);
 							break;
 
 						case 'startup':
@@ -94,11 +94,11 @@ function main(gameId) {
 							break;
 
 						case 'localState':
-							gameContext.updateLocal(obj.event.players);
+							gameContext.updateLocal(obj.event);
 							break;
 
 						case 'voteChancellor':
-							voteContext.start(obj.event.chancellor);
+							voteContext.start(obj.event);
 							break;
 						case 'votingEnded':
 							voteContext.end(obj.event);

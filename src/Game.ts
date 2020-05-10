@@ -436,7 +436,7 @@ export class Game {
 				this.send(this.players[this.currentPresident], { type: 'presidentLaws', cards });
 			}, 3500);
 		} else {
-			print('Game', '#' + this.id + " Vote for '" + this.currentChancellor + ' failed');
+			print('Game', '#' + this.id + " Vote for '" + this.candiateChancellor + ' failed');
 			this.noGovermentCounter += 1;
 			this.gameState = GameStates.nextPresident;
 			this.currentChancellor = null;
@@ -559,9 +559,16 @@ export class Game {
 		this.gameState = GameStates.selectKill;
 		this.currentSelection = null;
 		this.boradcastGameState();
+		const ignorePlayers = [];
+		for (let index = 0; index < this.players.length; index++) {
+			if (this.players[index].alive === true) {
+				ignorePlayers.push(index);
+			}
+		}
+
 		this.send(this.players[this.currentPresident], {
 			type: 'selectKill',
-			ignorePlayers: this.players.filter((p) => p.alive === false)
+			ignorePlayers
 		});
 	}
 
@@ -708,11 +715,15 @@ export class Game {
 	}
 
 	private broadcastLocalState() {
-		this.broadcast({ type: 'localState', players: this.players.map((v) => v.localState) });
+		this.broadcast({
+			type: 'localState',
+			players: this.players.map((v) => v.localState),
+			gameState: this.gameState
+		});
 	}
 
 	private boradcastGameState() {
-		if (this.paused) return;
+		// if (this.paused) return;
 
 		const exportPlayers = [];
 		for (let i = 0; i < this.players.length; i++) {
@@ -727,7 +738,6 @@ export class Game {
 
 		this.broadcast({
 			type: 'globalGameState',
-			gameState: this.gameState,
 			players: exportPlayers,
 			currentChancellor: this.currentChancellor,
 			currentPresident: this.currentPresident,

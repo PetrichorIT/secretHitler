@@ -16,6 +16,16 @@ db.defaults({ sessions: [], users: [] }).write();
 const clients: { [key: string]: ws[] } = {};
 const games: { [key: string]: Game } = {};
 
+// Session Cleanup
+let sessions = db.get('sessions').value();
+if (sessions) {
+	sessions = sessions.filter((s: any) => {
+		const bTime = new Date(s.time).getTime();
+		return new Date().getTime() - bTime < 12 * 60 * 60 * 1000;
+	});
+	db.set('sessions', sessions).write();
+}
+
 const app = expressWs(express()).app;
 app.set('view engine', 'ejs');
 app.use(express.static('public'));
@@ -27,6 +37,7 @@ app.get('/', cookieParser(), (req, res) => {
 		gameBlueprints.forEach((gameBp) => {
 			gameOverviews.push({ id: gameBp.substring(0, gameBp.length - 5), isOn: false, data: undefined });
 		});
+
 		for (const key in games) {
 			if (games.hasOwnProperty(key)) {
 				const game = games[key];
@@ -40,10 +51,12 @@ app.get('/', cookieParser(), (req, res) => {
 				}
 			}
 		}
+
 		const session = db.get('sessions').find({ sid: req.cookies['sh.connect.sid'] }).value();
 		if (!session) {
 			return res.redirect('/login');
 		}
+
 		res.render('pages/home.ejs', { games: gameOverviews, username: session.username });
 	});
 });
@@ -53,6 +66,7 @@ app.get('/new', cookieParser(), (req, res) => {
 	if (!session) {
 		return res.redirect('/login');
 	}
+
 	res.render('pages/new.ejs');
 });
 
@@ -124,7 +138,6 @@ app.post('/login', (req, res) => {
 		})
 		.value();
 
-	// const reqRes = db.get('users').find({ username, password }).value();
 	if (!reqRes) return res.status(400).json({ type: 'error', error: '_invalid_credentials' });
 
 	const sid = v4();
@@ -140,14 +153,15 @@ app.post('/login', (req, res) => {
 	res.json({ type: 'success', sid });
 });
 
-// GAME
-
 app.get('/:gameid', (req, res) => {
 	const gameid = req.params.gameid;
 
 	if (!games[gameid]) {
 		const ex = fs.existsSync(`data/games/${req.params.gameid}.json`);
-		if (!ex) return res.status(400).json({ type: 'error', error: 'GameID does not exist' });
+		if (!ex)
+			return res
+				.status(400)
+				.render('pages/error.ejs', { error: `404 - Game with id "${gameid}" does not exist` });
 		games[gameid] = new Game(gameid, (won) => {
 			delete games[gameid];
 			if (clients[gameid]) {
@@ -219,7 +233,7 @@ app.ws('/:gameid', (ws, req) => {
 });
 
 app.all('*', function(req, res) {
-	return res.status(404).end('404 - Not Found');
+	return res.status(404).render('pages/error.ejs', { error: '404 - Not Found' });
 });
 
 let PORT = process.env.PORT || 80;

@@ -19,8 +19,9 @@ class VoteContext {
 		});
 	}
 
-	start(playerId) {
-		console.log(playerId);
+	start(event) {
+		const playerId = event.chancellor;
+
 		this.canidateId = playerId;
 		this.container.style.display = 'block';
 

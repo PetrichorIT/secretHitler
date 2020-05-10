@@ -29,7 +29,8 @@ class ReadyContext {
 		}
 	}
 
-	update(users) {
+	update(event) {
+		let users = event.users;
 		let str = '';
 		for (const user of users) {
 			str += `<li class="list-group-item d-flex justify-content-between align-items-center">${user.name}<span class="badge badge-${user.localState
