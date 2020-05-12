@@ -168,7 +168,7 @@ class GameContext {
 			document.querySelector('#spinner-' + i).hidden = !event.players[i];
 		}
 
-		this.stateLabel.innerHTML = gameStateTranslate[this.gameState];
+		this.stateLabel.innerHTML = gameStateTranslate[event.gameState];
 	}
 }
 

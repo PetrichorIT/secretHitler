@@ -27,52 +27,56 @@ class VoteContext {
 
 		let index = gameContext.players.findIndex((p) => p.id === playerId);
 		if (index === -1) {
-			console.log(this);
 			return;
 		}
 		let name = gameContext.players[index].name;
 
 		this.titleContainer.innerHTML = 'Vote for ' + name;
 
-		if (this.voteResultsContainer.childElementCount === 0) {
-			for (const player of gameContext.players) {
-				const element = document.createElement('div');
-				element.id = 'voteResultBox' + player.id;
+		if (this.voteResultsContainer.childElementCount === 0) this.setupViews();
+	}
 
-				const playerCard = document.createElement('div');
-				playerCard.classList.add('staticCard');
-				playerCard.style.border = '4px solid ' + player.color;
-				playerCard.innerHTML = `<img src="img/portraits/${player.image}.png" alt="profileImage">` + player.name;
-				element.append(playerCard);
+	setupViews() {
+		for (const player of gameContext.players) {
+			const element = document.createElement('div');
+			element.id = 'voteResultBox' + player.id;
 
-				const yesCard = document.createElement('img');
-				yesCard.hidden = true;
-				yesCard.id = 'yes-' + player.name;
-				yesCard.src = 'img/yes.png';
-				yesCard.alt = 'YES';
-				yesCard.style.height = '200px';
-				element.append(yesCard);
+			const playerCard = document.createElement('div');
+			playerCard.classList.add('staticCard');
+			playerCard.style.border = '4px solid ' + player.color;
+			playerCard.innerHTML = `<img src="img/portraits/${player.image}.png" alt="profileImage">` + player.name;
+			element.append(playerCard);
 
-				const noCard = document.createElement('img');
-				noCard.hidden = true;
-				noCard.id = 'no-' + player.name;
-				noCard.src = 'img/no.png';
-				noCard.alt = 'no';
-				noCard.style.height = '200px';
-				element.append(noCard);
+			const yesCard = document.createElement('img');
+			yesCard.hidden = true;
+			yesCard.id = 'yes-' + player.name;
+			yesCard.src = 'img/yes.png';
+			yesCard.alt = 'YES';
+			yesCard.style.height = '200px';
+			element.append(yesCard);
 
-				this.voteResultsContainer.append(element);
-			}
+			const noCard = document.createElement('img');
+			noCard.hidden = true;
+			noCard.id = 'no-' + player.name;
+			noCard.src = 'img/no.png';
+			noCard.alt = 'no';
+			noCard.style.height = '200px';
+			element.append(noCard);
+
+			this.voteResultsContainer.append(element);
 		}
 	}
 
 	sendVote(agreed) {
-		this.socket.send(JSON.stringify({ type: 'ingame', event: { type: 'votedChancellor', vote: agreed } }));
+		this.socket.send(JSON.stringify({ type: 'ingame', event: { type: 'voteChancellor-response', vote: agreed } }));
 		(agreed ? this.yesImage : this.noImage).classList.add('selected');
 		(agreed ? this.noImage : this.yesImage).classList.remove('selected');
 	}
 
 	end(event) {
+		// For Spectators
+		if (this.voteResultsContainer.childElementCount === 0) this.setupViews();
+
 		this.container.style.display = 'block'; // For Dead Spectators
 		this.yesImage.style.display = 'none';
 		this.noImage.style.display = 'none';

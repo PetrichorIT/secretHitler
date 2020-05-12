@@ -16,7 +16,11 @@
                 <li class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" onclick="window.location = '/<%= game.id %>'">
                     Game #<%= game.id %>
                     <% if (game.isOn) {%>
+                        <% if (game.data.isOpen) { %>
                         <span class="badge badge-primary badge-pill"><%= game.data.players %> Players</span>
+                        <% } else {%>
+                            <span class="badge badge-info badge-pill">Game running</span>
+                        <% } %>
                     <% } else {%>
                         <span class="badge badge-primary badge-light">Not yet loaded</span>
                     <% } %>

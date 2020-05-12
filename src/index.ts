@@ -16,7 +16,10 @@ db.defaults({ sessions: [], users: [] }).write();
 const clients: { [key: string]: ws[] } = {};
 const games: { [key: string]: Game } = {};
 
-// Session Cleanup
+/* 
+ * Session cleanup
+ * Deletes all sessions older than 12h 
+ */
 let sessions = db.get('sessions').value();
 if (sessions) {
 	sessions = sessions.filter((s: any) => {
@@ -26,11 +29,18 @@ if (sessions) {
 	db.set('sessions', sessions).write();
 }
 
+/**
+ * Main API Application
+ */
 const app = expressWs(express()).app;
 app.set('view engine', 'ejs');
 app.use(express.static('public'));
 
+/**
+ * Home View
+ */
 app.get('/', cookieParser(), (req, res) => {
+	/* Get All existing games by their savegames */
 	fs.readdir('data/games', (err, gameBlueprints) => {
 		if (err) gameBlueprints = [];
 		const gameOverviews: { id: string; isOn: boolean; data: any | undefined }[] = [];
@@ -38,20 +48,23 @@ app.get('/', cookieParser(), (req, res) => {
 			gameOverviews.push({ id: gameBp.substring(0, gameBp.length - 5), isOn: false, data: undefined });
 		});
 
+		/* Collect more information about active games */
 		for (const key in games) {
 			if (games.hasOwnProperty(key)) {
 				const game = games[key];
 
 				const index = gameOverviews.findIndex((v) => v.id === game.id);
 				if (index === -1) {
+					console.warn("[FS] Inconsistency at '/' game '" + key + ' has no savegame backup');
 					gameOverviews.push({ id: game.id, isOn: true, data: { players: game.players.length } });
 				} else {
 					gameOverviews[index].isOn = true;
-					gameOverviews[index].data = { players: game.players.length };
+					gameOverviews[index].data = { players: game.players.length, isOpen: game.gameState === 1 };
 				}
 			}
 		}
 
+		/* Extract Session by Cookie */
 		const session = db.get('sessions').find({ sid: req.cookies['sh.connect.sid'] }).value();
 		if (!session) {
 			return res.redirect('/login');
@@ -61,7 +74,9 @@ app.get('/', cookieParser(), (req, res) => {
 	});
 });
 
+/* Create new game page */
 app.get('/new', cookieParser(), (req, res) => {
+	/* Extract and confirm Session by Cookie  */
 	const session = db.get('sessions').find({ sid: req.cookies['sh.connect.sid'] }).value();
 	if (!session) {
 		return res.redirect('/login');
@@ -71,6 +86,7 @@ app.get('/new', cookieParser(), (req, res) => {
 });
 
 app.post('/new', cookieParser(), express.json(), express.urlencoded({ extended: false }), (req, res) => {
+	/* Extract and confirm Session by Cookie  */
 	const session = db.get('sessions').find({ sid: req.cookies['sh.connect.sid'] }).value();
 	if (!session) {
 		return res.redirect('/login');
@@ -112,8 +128,7 @@ app.post('/register', express.json(), (req, res) => {
 	});
 });
 
-// LOGIN
-
+/* Login Page */
 app.get('/login', (req, res) => {
 	res.render('pages/login.ejs');
 	print('Get', 'root/login <' + req.connection.remoteAddress + '>');
@@ -153,15 +168,20 @@ app.post('/login', (req, res) => {
 	res.json({ type: 'success', sid });
 });
 
+/**
+ * Game session managment
+ */
+
 app.get('/:gameid', (req, res) => {
 	const gameid = req.params.gameid;
 
 	if (!games[gameid]) {
 		const ex = fs.existsSync(`data/games/${req.params.gameid}.json`);
-		if (!ex)
+		if (!ex) {
 			return res
 				.status(400)
 				.render('pages/error.ejs', { error: `404 - Game with id "${gameid}" does not exist` });
+		}
 		games[gameid] = new Game(gameid, (won) => {
 			delete games[gameid];
 			if (clients[gameid]) {
@@ -208,6 +228,7 @@ app.ws('/:gameid', (ws, req) => {
 					try {
 						game.addPlayer(sessionUser, ws);
 					} catch (e) {
+						console.log(e);
 						error(ws, '_invalid_player');
 						ws.close();
 					}

@@ -1,6 +1,5 @@
 const printGroups: { [key: string]: string } = {
 	Ws: '\u{001b}[0;31m',
-	Exp: '\u{001b}[0;35m',
 	Get: '\u{001b}[0;36m',
 	Post: '\u{001b}[0;36m',
 	Error: '\u{001b}[1;31m',

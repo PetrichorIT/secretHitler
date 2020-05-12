@@ -41,6 +41,42 @@ Semi-Broadcasts are requests for actions to all players. There is currently only
 
 Direct Messages are active requests as well as passive updates. The requests contain all gameActions to be performed by one player at a time. The updates include secret data (like roles) that only this one player should know. They are send to one specific client at a time.
 
+## Specs
+
+### Server Side
+
+| Type          | Classification  | Paramters | Description |
+|---------------|-----------------|-----------|-------------|
+| selectChancellor | Direct Message | ignorePlayers | Send to president, to select from alive (not blocked) players |
+| voteChancellor | Direct Message | chancellor | Send to all alive players. to vote for chancellor |
+| presidentLaws | Direct Message | cards | Send to president to select laws |
+| chancellorLaws | Direct Message | cards | Send to chancellor to select laws |
+| selectKill | Direct Message | ignorePlayers | Send to president, select any alive player to be killed |
+| kill | Direct Message | | Send to killed player, setting him to spectator mode |
+| selectPresident | Direct Message | ignorePlayers | Send to president, to select out of order president |
+| selectPlayer_to_inspect | Direct Message | ignorePlayers | Send to president, select any alive player |
+| inspectPlayer | Direct Message | player | Send to president, contains partill secret role of other player |
+| inspectLaws | Direct Message | laws | Send to president, contains 3 Laws (next one on the pile) |
+| role | Direct Message | role, fasho?, hitler? | Send to any player individually, contains full secret role |
+| requestReadyForGame | Direct Message |  | Send to any client, if game is paused |
+| requestingVeto | Direct Message | | Send to President if Chancellor requested valid veto |
+| win | Broadcast | players, fashosWon | Send to all clients, final message of a game |
+| abort | Broadcast | | Send to all clients, closes all connections |
+| startup | Broadcast |  | Send to prepare client of end of paused state |
+| votingEnded | Broadcast | result, results | Send to all clients, ending VotingContext |
+| waitingState | Broadcast | users, spectators | Send to all clients, while in paused state |
+| localState | Broadcast | players, gameState | Send to all clients, high frequency |
+| globalGameState | Broadcast | many... | Send to all clients, low frequency |
+
+### Client side
+
+| Type          | Classification  | Paramters | Description |
+|---------------|-----------------|-----------|-------------|
+| voteChancellor-response | Direct Message | vote | Sends a players response to voteChancellor, can be changed |
+| presidentVeto | Direct Message | veto | Presidents confirms or denies veto request by Chancellor |
+| chancellorVeto | Direct Message | | Chancellor requests Veto |
+| *select*-response | Direct Message | selection | Sends reponse to a *select* request |
+
 ### Error Managment
 
 If a Client loses the connection , he/she can reconnect without the waitingMenu up to 30sec after loss of connection.

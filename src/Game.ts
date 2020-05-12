@@ -1,32 +1,32 @@
 import print from './logger';
 import { jdb, SyncAdapter, Wrapper } from './jdb';
+import ws from 'ws';
 
-const TIMEOUT = 30 * 1000;
-const GameStates = {
-	/*interrupted: 0,*/ invalid: 1,
-	startup: 2,
-	nextPresident: 3,
-	selectChancellor: 4,
-	voteChancellor: 5,
-	presidentLaws: 6,
-	chancellorLaws: 7,
-	veto: 8,
+enum GameState {
+	invalid = 1,
+	startup = 2,
+	nextPresident = 3,
+	selectChancellor = 4,
+	voteChancellor = 5,
+	presidentLaws = 6,
+	chancellorLaws = 7,
+	veto = 8,
 
-	prepareSelectKill: 9,
-	selectKill: 10,
+	prepareSelectKill = 9,
+	selectKill = 10,
 
-	prepareSelectPresident: 11,
-	selectPresident: 12,
+	prepareSelectPresident = 11,
+	selectPresident = 12,
 
-	prepareInspectPlayer: 13,
-	inspectPlayer: 14,
+	prepareInspectPlayer = 13,
+	inspectPlayer = 14,
 
-	prepareInspectLaws: 15,
-	inspectLaws: 16
-};
-Object.freeze(GameStates);
+	prepareInspectLaws = 15,
+	inspectLaws = 16
+}
 
 type EventType = { type: string; [key: string]: any };
+type PlayerLike = { username: string; [key: string]: any };
 type Player = {
 	name: string;
 	role?: {
@@ -35,21 +35,26 @@ type Player = {
 	};
 	image?: string;
 	color?: string;
-	client: any | null;
+	client: ws | null;
 	localState: boolean;
 	alive?: boolean;
 	lastEvent?: EventType;
 };
 
+/**
+ * A class to act as a game master
+ */
 export class Game {
 	id: string;
 	dismissGameHandler: (won: boolean) => void;
 	blocked: boolean;
 	paused: boolean;
+
 	players: Player[];
+	spectators: { client: ws; name: string }[] = [];
 
 	// State Management
-	gameState: number;
+	gameState: GameState;
 	effects: number[] = [];
 
 	drawPile: boolean[] = [];
@@ -79,14 +84,50 @@ export class Game {
 		this.blocked = false;
 		this.id = id;
 		this.players = [];
-		this.gameState = GameStates.invalid;
+		this.gameState = GameState.invalid;
 
 		// DEBUG - not included
 		this.load();
 	}
 
-	// IO
+	/**
+	 * Ending the current game session by closing all connnections
+	 * and calling a dismiss handler
+	 */
+	private win(fashosWon: boolean) {
+		this.paused = true;
+		const exportPlayers = [];
+		for (let i = 0; i < this.players.length; i++) {
+			exportPlayers.push({
+				id: i,
+				name: this.players[i].name,
+				color: this.players[i].color,
+				alive: this.players[i].alive,
+				role: this.players[i].role
+			});
+		}
+		this.broadcast({
+			type: 'win',
+			players: exportPlayers,
+			fashosWon
+		});
 
+		this.dismissGameHandler(true);
+	}
+
+	/**
+	 * Aborting the current game session by closing all connections
+	 * and calling a dismiss handler
+	 */
+	private abort() {
+		this.broadcast({ type: 'abort' });
+		this.dismissGameHandler(false);
+	}
+
+	/**
+	 * Saves gameState to a file in the data/games folder
+	 * called <id>.json where id := this.id 
+	 */
 	private save() {
 		if (this.db === null) {
 			try {
@@ -131,6 +172,12 @@ export class Game {
 		this.db.set('gamedata', gameData).write();
 	}
 
+	/**
+	 * Loads the gameState from a stored state in the corresponding <id>.json file
+	 * 
+	 * If file does not exists (or does not contain valid gameData) the function
+	 * does not affect the gameState, nor does it throw an exception
+	 */
 	private load() {
 		if (this.db === null) {
 			this.db = jdb(new SyncAdapter('data/games/' + this.id + '.json'));
@@ -170,9 +217,11 @@ export class Game {
 		this.tryUpdateState();
 	}
 
-	// Main Game Loop
-
-	private tryUnpause(action: () => any) {
+	/**
+	 * Helper function that executes the action if all players a
+	 * ready to unpause the game
+	 */
+	private tryUnpause(action: () => void) {
 		if (this.players.length < 2) return;
 		for (const player of this.players) {
 			if (player.localState) return;
@@ -182,8 +231,11 @@ export class Game {
 		action();
 	}
 
+	/**
+	 * Initalizing a new Game from Game State .invalid
+	 */
 	private startNewGame() {
-		this.gameState = GameStates.startup;
+		this.gameState = GameState.startup;
 
 		const numberOfPlayers = Object.keys(this.players).length;
 
@@ -235,9 +287,12 @@ export class Game {
 		this.tryUpdateState();
 	}
 
+	/**
+	 * Main Game Loop
+	 */
 	private tryUpdateState() {
 		if (this.paused) {
-			if (this.gameState === GameStates.invalid) {
+			if (this.gameState === GameState.invalid) {
 				this.tryUnpause(() => this.startNewGame());
 			} else {
 				this.tryUnpause(() => {
@@ -250,60 +305,63 @@ export class Game {
 		}
 
 		switch (this.gameState) {
-			case GameStates.startup:
+			case GameState.startup:
 				this.handleState_startup();
 				break;
 
-			case GameStates.nextPresident:
+			case GameState.nextPresident:
 				this.handleState_nextPresident();
 				break;
 
-			case GameStates.selectChancellor:
+			case GameState.selectChancellor:
 				this.handleState_selectChancellor();
 				break;
 
-			case GameStates.voteChancellor:
+			case GameState.voteChancellor:
 				this.handleState_voteChancellor();
 				break;
-			case GameStates.presidentLaws:
+			case GameState.presidentLaws:
 				this.handleState_presidentLaws();
 				break;
 
-			case GameStates.chancellorLaws:
+			case GameState.chancellorLaws:
 				this, this.handleState_chancellorLaws();
 				break;
 
-			case GameStates.prepareSelectKill:
+			case GameState.prepareSelectKill:
 				this.handleState_prepareSelectKill();
 				break;
-			case GameStates.selectKill:
+			case GameState.selectKill:
 				this.handleState_selectKill();
 				break;
 
-			case GameStates.prepareSelectPresident:
+			case GameState.prepareSelectPresident:
 				this.handleState_prepareSelectPresident();
 				break;
-			case GameStates.selectPresident:
+			case GameState.selectPresident:
 				this.handleState_selectPresident();
 				break;
 
-			case GameStates.prepareInspectPlayer:
+			case GameState.prepareInspectPlayer:
 				this.handleState_prepareInspectPlayer();
 				break;
-			case GameStates.inspectPlayer:
+			case GameState.inspectPlayer:
 				this.handleState_inspectPlayer();
 				break;
 
-			case GameStates.prepareInspectLaws:
+			case GameState.prepareInspectLaws:
 				this.handleState_prepareInspectLaws();
 				break;
-			case GameStates.inspectLaws:
+			case GameState.inspectLaws:
 				this.handleState_inspectLaws();
 				break;
 		}
 	}
 
-	// State Handlers
+	/*
+	 All those state handlers handle a different gameState
+	 They are called exclusivly by the mainGameLoop function
+	 */
 
 	private handleState_startup() {
 		print(
@@ -316,7 +374,7 @@ export class Game {
 				})
 		);
 		this.currentPresident = Math.floor(Math.random() * this.players.length) - 1;
-		this.gameState = GameStates.nextPresident;
+		this.gameState = GameState.nextPresident;
 		this.tryUpdateState();
 	}
 
@@ -326,6 +384,7 @@ export class Game {
 			this.fallbackPresident = null;
 		}
 
+		this.currentChancellor = null;
 		this.currentPresident = this.currentPresident + 1;
 		if (this.currentPresident === this.players.length) this.currentPresident = 0;
 		print('Game', '#' + this.id + ' selectingNewPresident: ' + this.currentPresident);
@@ -350,7 +409,7 @@ export class Game {
 		print('Game', '#' + this.id + ' selectingNewChancellor: not(' + ignorePlayers + ')');
 
 		this.players[this.currentPresident].localState = true;
-		this.gameState = GameStates.selectChancellor;
+		this.gameState = GameState.selectChancellor;
 		this.currentSelectorName = this.players[this.currentPresident].name;
 
 		this.boradcastGameState();
@@ -358,10 +417,11 @@ export class Game {
 	}
 
 	private handleState_selectChancellor() {
+		if (this.currentSelection === null) return;
 		print('Game', '#' + this.id + ' selectedNewChancellor: ' + this.currentSelection);
 
 		this.candiateChancellor = this.currentSelection;
-		this.gameState = GameStates.voteChancellor;
+		this.gameState = GameState.voteChancellor;
 		this.currentSelection = {};
 		for (let i = 0; i < this.players.length; i++) {
 			this.players[i].localState = true;
@@ -398,6 +458,7 @@ export class Game {
 			}
 		}
 
+		this.currentSelection = null;
 		if (pro > con || (pro == con && presidentsVote)) {
 			print('Game', '#' + this.id + " Vote for '" + this.candiateChancellor + ' successfull');
 
@@ -430,7 +491,7 @@ export class Game {
 				cards.push(this.drawPile.shift());
 
 				this.currentSelection = null;
-				this.gameState = GameStates.presidentLaws;
+				this.gameState = GameState.presidentLaws;
 				this.players[this.currentPresident].localState = true;
 				this.boradcastGameState();
 				this.send(this.players[this.currentPresident], { type: 'presidentLaws', cards });
@@ -438,7 +499,7 @@ export class Game {
 		} else {
 			print('Game', '#' + this.id + " Vote for '" + this.candiateChancellor + ' failed');
 			this.noGovermentCounter += 1;
-			this.gameState = GameStates.nextPresident;
+			this.gameState = GameState.nextPresident;
 			this.currentChancellor = null;
 			this.blocked = true;
 
@@ -463,7 +524,7 @@ export class Game {
 							return this.win(true);
 						}
 
-						this.gameState = GameStates.nextPresident;
+						this.gameState = GameState.nextPresident;
 						this.currentChancellor = null;
 						this.boradcastGameState();
 						setTimeout(() => {
@@ -477,7 +538,7 @@ export class Game {
 							return this.win(true);
 						}
 
-						this.gameState = GameStates.nextPresident;
+						this.gameState = GameState.nextPresident;
 						this.currentChancellor = null;
 						this.boradcastGameState();
 						setTimeout(() => {
@@ -496,7 +557,7 @@ export class Game {
 		if (this.currentChancellor === null) return;
 		this.discardPile.push(this.currentSelection.revoked[0]);
 
-		this.gameState = GameStates.chancellorLaws;
+		this.gameState = GameState.chancellorLaws;
 		this.players[this.currentChancellor!].localState = true;
 
 		this.broadcastLocalState();
@@ -533,7 +594,7 @@ export class Game {
 				// Remmeber to unset currenPreident / Chancellor
 				// Effect
 			} else {
-				this.gameState = GameStates.nextPresident;
+				this.gameState = GameState.nextPresident;
 				this.currentChancellor = null;
 				this.boradcastGameState();
 				setTimeout(() => {
@@ -545,7 +606,7 @@ export class Game {
 			if (this.liberalLaws.length === 5) {
 				return this.win(false);
 			}
-			this.gameState = GameStates.nextPresident;
+			this.gameState = GameState.nextPresident;
 			this.currentChancellor = null;
 			this.boradcastGameState();
 			setTimeout(() => {
@@ -556,7 +617,7 @@ export class Game {
 
 	private handleState_prepareSelectKill() {
 		this.players[this.currentPresident].localState = true;
-		this.gameState = GameStates.selectKill;
+		this.gameState = GameState.selectKill;
 		this.currentSelection = null;
 		this.boradcastGameState();
 		const ignorePlayers = [];
@@ -584,7 +645,7 @@ export class Game {
 			return;
 		}
 
-		this.gameState = GameStates.nextPresident;
+		this.gameState = GameState.nextPresident;
 		setTimeout(() => {
 			this.tryUpdateState();
 		}, 2000);
@@ -592,7 +653,7 @@ export class Game {
 
 	private handleState_prepareSelectPresident() {
 		this.players[this.currentPresident].localState = true;
-		this.gameState = GameStates.selectPresident;
+		this.gameState = GameState.selectPresident;
 		this.currentSelection = null;
 		this.boradcastGameState();
 
@@ -635,7 +696,7 @@ export class Game {
 		print('Game', '#' + this.id + ' selectingNewChancellor: not(' + ignoredPlayers + ')');
 
 		this.players[this.currentPresident].localState = true;
-		this.gameState = GameStates.selectChancellor;
+		this.gameState = GameState.selectChancellor;
 		this.currentSelectorName = this.players[this.currentPresident].name;
 
 		this.boradcastGameState();
@@ -647,7 +708,7 @@ export class Game {
 
 	private handleState_prepareInspectPlayer() {
 		this.players[this.currentPresident].localState = true;
-		this.gameState = GameStates.inspectPlayer;
+		this.gameState = GameState.inspectPlayer;
 		this.currentSelection = null;
 		this.boradcastGameState();
 
@@ -683,7 +744,7 @@ export class Game {
 
 	private handleState_prepareInspectLaws() {
 		this.players[this.currentPresident].localState = true;
-		this.gameState = GameStates.inspectLaws;
+		this.gameState = GameState.inspectLaws;
 		this.currentSelection = null;
 		this.boradcastGameState();
 		this.send(this.players[this.currentPresident], { type: 'inspectLaws', laws: this.drawPile.slice(0, 3) });
@@ -691,16 +752,17 @@ export class Game {
 
 	private handleState_inspectLaws() {
 		this.currentChancellor = null;
-		this.gameState = GameStates.nextPresident;
+		this.gameState = GameState.nextPresident;
 		this.boradcastGameState();
 		this.tryUpdateState();
 	}
 
-	// Websocket Connections
-
+	/**
+	 * Sends the secret role information to a player at init or reconnect
+	 * This includes (if nessesary) revealed roles of other players
+	 */
 	private sendPlayerData(player: Player) {
-		const event: any = { type: 'role', role: player.role };
-
+		const event: EventType = { type: 'role', role: player.role };
 		if (player.role) {
 			if (this.players.length >= 7 && player.role!.isFasho && !player.role!.isHitler) {
 				event.hitler = this.players.findIndex((p) => p.role!.isHitler);
@@ -710,10 +772,27 @@ export class Game {
 				event.fasho = this.players.findIndex((p) => p.role!.isFasho && !p.role!.isHitler);
 			}
 		}
-
 		this.send(player, event);
 	}
 
+	/**
+	 * Sends information about the currently connected clients
+	 * and their ready states to all connected client (including spectators)
+	 */
+	private broadcastPausedState() {
+		this.broadcast({
+			type: 'waitingState',
+			users: this.players.map((p) => {
+				return { name: p.name, localState: p.localState };
+			}),
+			spectators: this.spectators.length
+		});
+	}
+
+	/**
+	 * Sends the gameState ID and the current actionStates of all
+	 * players to all players (including spectators)
+	 */
 	private broadcastLocalState() {
 		this.broadcast({
 			type: 'localState',
@@ -722,9 +801,11 @@ export class Game {
 		});
 	}
 
+	/**
+	 * Sends the totality of the current game State managed by the
+	 * GameContext to all players (including spectators)
+	 */
 	private boradcastGameState() {
-		// if (this.paused) return;
-
 		const exportPlayers = [];
 		for (let i = 0; i < this.players.length; i++) {
 			exportPlayers.push({
@@ -752,67 +833,72 @@ export class Game {
 		this.broadcastLocalState();
 	}
 
+	/**
+	 * Sends a message to all clients and spectators
+	 * Does not store this message as last message
+	 */
 	private broadcast(event: EventType) {
 		for (const player of this.players) {
-			this.send(player, event);
+			if (player.client === null) continue;
+			player.client.send(JSON.stringify({ type: 'ingame', event }));
+		}
+
+		for (const spectator of this.spectators) {
+			spectator.client.send(JSON.stringify({ type: 'ingame', event }));
 		}
 	}
 
+	/**
+	 * Sends Message to one client at a time
+	 * Does store this message in as last message
+	 */
 	private send(player: Player, event: EventType) {
 		if (player.client === null) return;
 		player.client.send(JSON.stringify({ type: 'ingame', event }));
-		if (event.type !== 'globalGameState' && event.type !== 'localState' && event.type !== 'waitingState') {
-			player.lastEvent = event;
-		}
+		player.lastEvent = event;
 	}
 
-	private win(fashosWon: boolean) {
-		this.paused = true;
-		const exportPlayers = [];
-		for (let i = 0; i < this.players.length; i++) {
-			exportPlayers.push({
-				id: i,
-				name: this.players[i].name,
-				color: this.players[i].color,
-				alive: this.players[i].alive,
-				role: this.players[i].role
-			});
-		}
-		this.broadcast({
-			type: 'win',
-			players: exportPlayers,
-			fashosWon
-		});
-
-		this.dismissGameHandler(true);
-	}
-
-	private abort() {
-		this.broadcast({ type: 'abort' });
-		this.dismissGameHandler(false);
-	}
-
-	// User Managment
-
-	addPlayer(player: any, client: any) {
+	/**
+	 * Handles a new authenticated ws-connection
+	 * and adds it to the game
+	 */
+	addPlayer(player: PlayerLike, client: ws) {
 		let index = this.players.findIndex((p) => p.name === player.username);
 		if (index >= 0) {
-			print('Game', '#' + this.id + " Reconnected player to game '" + player.username);
+			// Recoonect a player to his current gameState
+			print('Game', '#' + this.id + " Reconnected player '" + player.username);
 			this.reconnectClient(index, client);
 		} else {
-			print('Game', '#' + this.id + " Added player to game '" + player.username);
-			if (this.gameState !== GameStates.invalid) throw new Error('Cannot Join');
-			this.players.push({ name: player.username, client, localState: true });
-			index = this.players.length - 1;
+			if (this.gameState !== GameState.invalid) {
+				print('Game', '#' + this.id + " Added spectator '" + player.username);
+				this.spectators.push({ client, name: player.username });
+				client.send(JSON.stringify({ type: 'ingame', event: { type: 'spectate' } }));
+				if (this.paused) {
+					this.broadcastPausedState();
+				} else {
+					this.boradcastGameState();
+				}
+				return;
+			} else {
+				print('Game', '#' + this.id + " Added player '" + player.username);
+				this.players.push({ name: player.username, client, localState: true });
+				index = this.players.length - 1;
+			}
 		}
 		// Prepare for readystate
 		if (this.paused) {
 			let index = this.players.findIndex((p) => p.name === player.username);
-			this.sendWaitingState();
+			this.broadcastPausedState();
 			this.send(this.players[index], { type: 'requestReadyForGame' });
 		}
 	}
 
+	/**
+	 * Reconnects a player to his last gameState 
+	 * if he was part of the game once (even if he is dead now)
+	 * 
+	 * Does work in paused and active gameState
+	 */
 	private reconnectClient(index: number, client: any) {
 		this.players[index].client = client;
 
@@ -832,17 +918,16 @@ export class Game {
 		}
 	}
 
-	private sendWaitingState() {
-		const users = [];
-		for (const player of this.players) {
-			users.push({ name: player.name, localState: player.localState });
-		}
-		this.broadcast({ type: 'waitingState', users });
-	}
-
+	/**
+	 * Handle a closed ws-connection in game
+	 */
 	clientLost(username: string) {
 		let index = this.players.findIndex((p) => p.name === username);
-		if (index === -1) return;
+		if (index === -1) {
+			let sindex = this.spectators.findIndex((p) => p.name === username);
+			this.spectators.splice(sindex, 1);
+			return;
+		}
 
 		this.players[index].client = null;
 		if (this.players[index].alive === true && this.paused === false) {
@@ -854,17 +939,21 @@ export class Game {
 					this.players.splice(index, 1);
 					this.abort();
 				}
-			}, TIMEOUT);
+			}, baseConfig.timeout);
 		}
 	}
 
+	/**
+	 * Handles incoming client side messages
+	 * identified by a username of the authenticated ws-connection
+	 */
 	recive(username: string, event: EventType) {
 		if (this.blocked === true) return;
 		if (this.paused) {
 			if (event.type === 'readyForGame') {
 				let index = this.players.findIndex((p) => p.name === username);
 				this.players[index].localState = false;
-				this.sendWaitingState();
+				this.broadcastPausedState();
 				this.tryUpdateState();
 			}
 			return;
@@ -877,7 +966,7 @@ export class Game {
 				this.broadcastLocalState();
 				this.tryUpdateState();
 				break;
-			case 'votedChancellor':
+			case 'voteChancellor-response':
 				print('Game', '#' + this.id + ' Vote: ' + event.vote + ' by ' + username);
 				this.currentSelection[username] = event.vote;
 				this.players.find((p) => p.name == username)!.localState = false;
@@ -904,7 +993,7 @@ export class Game {
 				this.currentSelection = this.players[this.currentChancellor!].lastEvent;
 				this.players[this.currentPresident].localState = true;
 				this.players[this.currentChancellor!].localState = false;
-				this.gameState = GameStates.veto;
+				this.gameState = GameState.veto;
 				this.boradcastGameState();
 				this.send(this.players[this.currentPresident], { type: 'requestingVeto' });
 				break;
@@ -913,7 +1002,7 @@ export class Game {
 				print('Game', '#' + this.id + ' presidentVeto' + event.veto);
 				this.players[this.currentPresident].localState = false;
 				if (event.veto) {
-					this.gameState = GameStates.nextPresident;
+					this.gameState = GameState.nextPresident;
 					for (const card of this.currentSelection.cards) {
 						this.discardPile.push(card);
 					}
@@ -921,7 +1010,7 @@ export class Game {
 					this.currentChancellor = null;
 					this.tryUpdateState();
 				} else {
-					this.gameState = GameStates.chancellorLaws;
+					this.gameState = GameState.chancellorLaws;
 					this.players[this.currentChancellor!].localState = true;
 					this.send(this.players[this.currentChancellor!], {
 						type: 'chancellorLaws',
@@ -958,14 +1047,14 @@ export class Game {
 				break;
 
 			case 'inspectPlayer-response':
-				this.gameState = GameStates.nextPresident;
+				this.gameState = GameState.nextPresident;
 				this.players[this.currentPresident].localState = false;
 				this.boradcastGameState();
 				this.tryUpdateState();
 				break;
 
 			case 'inspectLaws-response':
-				this.gameState = GameStates.nextPresident;
+				this.gameState = GameState.nextPresident;
 				this.players[this.currentPresident].localState = false;
 				this.boradcastGameState();
 				this.tryUpdateState();
@@ -978,18 +1067,21 @@ export class Game {
 	}
 }
 
-const baseConfig = jdb(new SyncAdapter('data/config.json')).value();
 export default Game;
 
+/*
+ * Configs 
+ */
+const baseConfig = jdb(new SyncAdapter('data/config.json')).value();
 const reconnectStates: { [key: string]: number } = {
-	voteChancellor: GameStates.voteChancellor,
-	selectChancellor: GameStates.selectChancellor,
-	selectPresident: GameStates.selectPresident,
-	presidentLaws: GameStates.presidentLaws,
-	chancellorLaws: GameStates.chancellorLaws,
-	requestingVeto: GameStates.veto,
-	selectKill: GameStates.selectKill,
-	selectPlayer_to_inspect: GameStates.inspectPlayer,
-	inspectPlayer: GameStates.inspectPlayer,
-	inspectLaws: GameStates.inspectLaws
+	voteChancellor: GameState.voteChancellor,
+	selectChancellor: GameState.selectChancellor,
+	selectPresident: GameState.selectPresident,
+	presidentLaws: GameState.presidentLaws,
+	chancellorLaws: GameState.chancellorLaws,
+	requestingVeto: GameState.veto,
+	selectKill: GameState.selectKill,
+	selectPlayer_to_inspect: GameState.inspectPlayer,
+	inspectPlayer: GameState.inspectPlayer,
+	inspectLaws: GameState.inspectLaws
 };

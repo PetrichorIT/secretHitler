@@ -21,3 +21,15 @@ Context:
 
 If a vote fails, a log is printed. The log falsly used this.currentChancellor instead of this.canidateChancellor
 
+# sh-2020-03
+> found v0.1.6
+
+> fixed v0.1.7
+
+Context:
+- Player::Spectator
+- Client::VoteContext
+- VoteContext::voteEnded
+
+The vote Context creates an error, because on the spectator side no start() was ever called so results view
+were never created
