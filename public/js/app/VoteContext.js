@@ -86,6 +86,7 @@ class VoteContext {
 		this.voteResultsContainer.hidden = false;
 		for (const uname in event.results) {
 			const vote = event.results[uname];
+			console.log(uname);
 			document.querySelector(`#${vote ? 'yes' : 'no'}-${uname}`).hidden = false;
 			document.querySelector(`#${vote ? 'no' : 'yes'}-${uname}`).hidden = true;
 		}

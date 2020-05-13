@@ -458,7 +458,6 @@ export class Game {
 			}
 		}
 
-		this.currentSelection = null;
 		if (pro > con || (pro == con && presidentsVote)) {
 			print('Game', '#' + this.id + " Vote for '" + this.candiateChancellor + ' successfull');
 
@@ -467,6 +466,7 @@ export class Game {
 
 			this.blocked = true;
 			this.broadcast({ type: 'votingEnded', result: true, results: this.currentSelection });
+			this.currentSelection = null;
 			this.boradcastGameState();
 
 			setTimeout(() => {
@@ -500,6 +500,7 @@ export class Game {
 			print('Game', '#' + this.id + " Vote for '" + this.candiateChancellor + ' failed');
 			this.noGovermentCounter += 1;
 			this.gameState = GameState.nextPresident;
+			this.currentSelection = null;
 			this.currentChancellor = null;
 			this.blocked = true;
 

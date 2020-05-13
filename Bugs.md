@@ -33,3 +33,10 @@ Context:
 
 The vote Context creates an error, because on the spectator side no start() was ever called so results view
 were never created
+
+# sh-2020-04
+> found v0.1.7
+
+> fixed v0.1.7a
+
+A Channge in v0.1.7 prevented the results to be send in case of the votingEnded Event.

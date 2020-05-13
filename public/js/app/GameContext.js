@@ -101,6 +101,10 @@ class GameContext {
 			}
 		}
 
+		if (!this.startedUp) {
+			this.start();
+		}
+
 		// Set Fasho Laws Background
 		let nPlayers = this.players.length;
 		if (nPlayers % 2 === 1) {
