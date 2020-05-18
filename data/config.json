@@ -215,7 +215,7 @@
 		]
 	},
 	"effects": {
-		"2": [ 15, null, null, null, null, null ],
+		"2": [ 15, 13, 11, 9, 9, null ],
 		"5": [ null, null, 15, 9, 9, null ],
 		"7": [ null, 13, 11, 9, 9, null ],
 		"9": [ 13, 13, 11, 9, 9, null ]

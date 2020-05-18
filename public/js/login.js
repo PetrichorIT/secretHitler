@@ -53,7 +53,7 @@ function checkCreateData() {
 					const obj = JSON.parse(this.responseText);
 					if (obj.type !== 'success') return alert('An unexpected error has occured');
 					setStoredValue('sh.connect.sid', obj.sid, 1);
-					window.location = '/';
+					window.location = '/' + REDIRECT;
 				}
 
 				if (this.status === 400) {

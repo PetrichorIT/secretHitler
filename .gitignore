@@ -1,3 +1,5 @@
+.gitignore
+prototyp/
 node_modules/
 build/*
 data/games/*

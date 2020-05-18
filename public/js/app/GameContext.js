@@ -159,10 +159,10 @@ class GameContext {
 		}
 
 		for (let i = 1; i <= 6; i++) {
-			document.querySelector('#tableLawFasho-' + i).hidden = i > this.fashoLaws.length;
+			document.querySelector('#tableLawFasho-' + i).hidden = i > this.fashoLaws;
 		}
 		for (let i = 1; i <= 5; i++) {
-			document.querySelector('#tableLawLiberal-' + i).hidden = i > this.liberalLaws.length;
+			document.querySelector('#tableLawLiberal-' + i).hidden = i > this.liberalLaws;
 		}
 	}
 

@@ -135,8 +135,10 @@ function main(gameId) {
 					break;
 
 				case 'error':
-					if ((obj.error = '_invalid_sid')) {
-						window.location = '/login';
+					if (obj.error === '_invalid_sid') {
+						window.location = '/login?sender=' + window.location.pathname;
+					} else {
+						window.location = '/error?error=' + obj.msg + '&sender=' + window.location.pathname;
 					}
 					break;
 			}

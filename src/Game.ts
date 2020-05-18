@@ -41,6 +41,11 @@ type Player = {
 	lastEvent?: EventType;
 };
 
+type Config = {
+	creator: string;
+	private: boolean;
+};
+
 /**
  * A class to act as a game master
  */
@@ -53,14 +58,13 @@ export class Game {
 	players: Player[];
 	spectators: { client: ws; name: string }[] = [];
 
-	// State Management
 	gameState: GameState;
 	effects: number[] = [];
 
 	drawPile: boolean[] = [];
 	discardPile: boolean[] = [];
-	fashoLaws: boolean[] = [];
-	liberalLaws: boolean[] = [];
+	fashoLaws: number = 0;
+	liberalLaws: number = 0;
 
 	noGovermentCounter: number = 0;
 
@@ -77,6 +81,7 @@ export class Game {
 	currentSelectorName: string | null = null;
 
 	db: Wrapper | null = null;
+	config: Config;
 
 	constructor(id: string, dismissGameHandler: (won: boolean) => void) {
 		this.dismissGameHandler = dismissGameHandler;
@@ -85,8 +90,8 @@ export class Game {
 		this.id = id;
 		this.players = [];
 		this.gameState = GameState.invalid;
+		this.config = { creator: 'root', private: true };
 
-		// DEBUG - not included
 		this.load();
 	}
 
@@ -170,6 +175,7 @@ export class Game {
 
 		this.db.set('timestamp', new Date()).write();
 		this.db.set('gamedata', gameData).write();
+		this.db.set('config', this.config).write();
 	}
 
 	/**
@@ -186,8 +192,11 @@ export class Game {
 		print('Game', '#' + this.id + ' Loading Game');
 
 		const gameData = this.db.get('gamedata').value();
+		const config = this.db.get('config').value();
 		if (!gameData) return;
+		if (!config) return;
 
+		this.config = config;
 		this.gameState = gameData.gameState;
 		this.drawPile = gameData.drawPile;
 		this.discardPile = gameData.discardPile;
@@ -269,8 +278,8 @@ export class Game {
 
 		this.discardPile = [];
 
-		this.fashoLaws = [];
-		this.liberalLaws = [];
+		this.fashoLaws = 0;
+		this.liberalLaws = 0;
 		this.noGovermentCounter = 0;
 
 		this.previousPresident = null;
@@ -471,7 +480,7 @@ export class Game {
 
 			setTimeout(() => {
 				this.blocked = false;
-				if (this.players[this.currentChancellor!].role!.isHitler && this.fashoLaws.length >= 3) {
+				if (this.players[this.currentChancellor!].role!.isHitler && this.fashoLaws >= 3) {
 					return this.win(true);
 				}
 
@@ -519,9 +528,9 @@ export class Game {
 
 					const card = this.drawPile.shift();
 					if (card) {
-						this.fashoLaws.push(true);
+						this.fashoLaws += 1;
 
-						if (this.fashoLaws.length === 6) {
+						if (this.fashoLaws === 6) {
 							return this.win(true);
 						}
 
@@ -533,9 +542,9 @@ export class Game {
 						}, 1000);
 						return;
 					} else {
-						this.liberalLaws.push(false);
+						this.liberalLaws += 1;
 
-						if (this.liberalLaws.length === 5) {
+						if (this.liberalLaws === 5) {
 							return this.win(true);
 						}
 
@@ -579,13 +588,13 @@ export class Game {
 		this.previousPresident = this.currentPresident;
 
 		if (this.currentSelection.selected[0]) {
-			this.fashoLaws.push(true);
+			this.fashoLaws += 1;
 
-			if (this.fashoLaws.length === 6) {
+			if (this.fashoLaws === 6) {
 				return this.win(true);
 			}
 
-			const effectState = this.effects[this.fashoLaws.length - 1];
+			const effectState = this.effects[this.fashoLaws - 1];
 
 			if (effectState) {
 				print('Game', '#' + this.id + ' EffectStatePrep: ' + effectState);
@@ -603,8 +612,8 @@ export class Game {
 				}, 3000);
 			}
 		} else {
-			this.liberalLaws.push(true);
-			if (this.liberalLaws.length === 5) {
+			this.liberalLaws += 1;
+			if (this.liberalLaws === 5) {
 				return this.win(false);
 			}
 			this.gameState = GameState.nextPresident;
@@ -871,6 +880,12 @@ export class Game {
 			this.reconnectClient(index, client);
 		} else {
 			if (this.gameState !== GameState.invalid) {
+				// Catch private game
+				if (this.config.private) {
+					client.send(JSON.stringify({ type: 'error', msg: 'The game is private and cannot be spectated' }));
+					return;
+				}
+
 				print('Game', '#' + this.id + " Added spectator '" + player.username);
 				this.spectators.push({ client, name: player.username });
 				client.send(JSON.stringify({ type: 'ingame', event: { type: 'spectate' } }));

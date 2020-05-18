@@ -24,7 +24,7 @@ class LawsContext {
 		this.titleContainer.innerHTML = 'Select ' + (this.event.cards.length - 1);
 		const allowVeto = !event.vetoFailed;
 
-		if (allowVeto && this.event.cards.length === 2 && gameContext.fashoLaws.length === 5) {
+		if (allowVeto && this.event.cards.length === 2 && gameContext.fashoLaws === 5) {
 			this.vetoButton.hidden = false;
 		} else {
 			this.vetoButton.hidden = true;
@@ -62,7 +62,7 @@ class LawsContext {
 	}
 
 	veto() {
-		if (this.event.cards.length === 2 && gameContext.fashoLaws.length === 5) {
+		if (this.event.cards.length === 2 && gameContext.fashoLaws === 5) {
 			this.socket.send(JSON.stringify({ type: 'ingame', event: { type: 'chancellorVeto' } }));
 			this.end();
 		}

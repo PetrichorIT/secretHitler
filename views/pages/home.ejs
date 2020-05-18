@@ -12,31 +12,41 @@
     <div class="card mb-3 border-primary">
         <h3 class="card-header bg-primary">Secret Hitler</h3>
         <ul class="list-group list-group-flush">
-            <% for(const game of games) { %>
-                <li class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" onclick="window.location = '/<%= game.id %>'">
-                    Game #<%= game.id %>
-                    <% if (game.isOn) {%>
-                        <% if (game.data.isOpen) { %>
-                        <span class="badge badge-primary badge-pill"><%= game.data.players %> Players</span>
-                        <% } else {%>
-                            <span class="badge badge-info badge-pill">Game running</span>
-                        <% } %>
-                    <% } else {%>
-                        <span class="badge badge-primary badge-light">Not yet loaded</span>
-                    <% } %>
-                    
-                </li>
+        <% for(const game of games) { %>
+            <li class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" onclick="window.location = '/<%= game.id %>'">
+            Game #<%= game.id %>
+            <% if (game.isOn) {%>
+                <% if (game.data.isOpen) { %>
+                    <span class="badge badge-primary badge-pill">
+                        <%= game.data.players %> Players
+                    </span>
+                <% } else {%>
+                    <span class="badge badge-primary badge-pill">
+                        Game 
+                        <%= (game.data.players === game.data.totalPlayers) ? "running" : "paused" %>
+                        (<%= game.data.players %>/<%= game.data.totalPlayers %>)
+                    </span>
+                <% } %>
+            <% } else {%>
+                <span class="badge badge-primary badge-light">Not yet loaded</span>
             <% } %>
+            </li>
+        <% } %>
+            <li class="list-group-item">
+                <div class="row d-flex" style="justify-content: center">
+                    <button type="button" class="btn btn-primary" onclick="window.location = '/login'" style="margin-right: 20px;">Login</button>
+                    <button type="button" class="btn btn-primary" onclick="window.location = '/new'">New Game</button>
+                </div>
+            </li>
         </ul>
         <div class="text-muted bg-primary" style="padding: 5px 20px;">
             Logged in as <%= username %>
           </div>
       </div>
-
       <br>
       <br>
       <br>
       <script src="js/storage.js"></script>
-    <script src="js/home.js"></script>
+      <script src="js/home.js"></script>
 </body>
 </html>

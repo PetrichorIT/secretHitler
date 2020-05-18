@@ -40,6 +40,12 @@ app.use(express.static('public'));
  * Home View
  */
 app.get('/', cookieParser(), (req, res) => {
+	/* Extract Session by Cookie */
+	const session = db.get('sessions').find({ sid: req.cookies['sh.connect.sid'] }).value();
+	if (!session) {
+		return res.redirect('/login');
+	}
+
 	/* Get All existing games by their savegames */
 	fs.readdir('data/games', (err, gameBlueprints) => {
 		if (err) gameBlueprints = [];
@@ -59,16 +65,16 @@ app.get('/', cookieParser(), (req, res) => {
 					gameOverviews.push({ id: game.id, isOn: true, data: { players: game.players.length } });
 				} else {
 					gameOverviews[index].isOn = true;
-					gameOverviews[index].data = { players: game.players.length, isOpen: game.gameState === 1 };
+					gameOverviews[index].data = {
+						players: clients[game.id].length,
+						totalPlayers: game.players.length,
+						isOpen: game.gameState === 1
+					};
 				}
 			}
 		}
 
-		/* Extract Session by Cookie */
-		const session = db.get('sessions').find({ sid: req.cookies['sh.connect.sid'] }).value();
-		if (!session) {
-			return res.redirect('/login');
-		}
+		/* Remove config private games MISSING*/
 
 		res.render('pages/home.ejs', { games: gameOverviews, username: session.username });
 	});
@@ -130,7 +136,8 @@ app.post('/register', express.json(), (req, res) => {
 
 /* Login Page */
 app.get('/login', (req, res) => {
-	res.render('pages/login.ejs');
+	const { sender } = req.query;
+	res.render('pages/login.ejs', { sender });
 	print('Get', 'root/login <' + req.connection.remoteAddress + '>');
 });
 
@@ -168,6 +175,11 @@ app.post('/login', (req, res) => {
 	res.json({ type: 'success', sid });
 });
 
+app.get('/error', (req, res) => {
+	const { error, sender } = req.query;
+	res.render('pages/error.ejs', { error, sender });
+});
+
 /**
  * Game session managment
  */
@@ -178,9 +190,8 @@ app.get('/:gameid', (req, res) => {
 	if (!games[gameid]) {
 		const ex = fs.existsSync(`data/games/${req.params.gameid}.json`);
 		if (!ex) {
-			return res
-				.status(400)
-				.render('pages/error.ejs', { error: `404 - Game with id "${gameid}" does not exist` });
+			const e = `404 - Not Found`;
+			return res.redirect(`error?error=${e}&sender=${gameid}`);
 		}
 		games[gameid] = new Game(gameid, (won) => {
 			delete games[gameid];
@@ -251,10 +262,6 @@ app.ws('/:gameid', (ws, req) => {
 		game.clientLost(sessionUser.username);
 		print('Ws', `${gameid} // closed connectionto <${sessionUser.username || 'noauth'}>`);
 	});
-});
-
-app.all('*', function(req, res) {
-	return res.status(404).render('pages/error.ejs', { error: '404 - Not Found' });
 });
 
 let PORT = process.env.PORT || 80;
