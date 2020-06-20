@@ -632,7 +632,7 @@ export class Game {
 		this.boradcastGameState();
 		const ignorePlayers = [];
 		for (let index = 0; index < this.players.length; index++) {
-			if (this.players[index].alive === true) {
+			if (this.players[index].alive === false) {
 				ignorePlayers.push(index);
 			}
 		}
@@ -1085,9 +1085,6 @@ export class Game {
 
 export default Game;
 
-/*
- * Configs 
- */
 const baseConfig = jdb(new SyncAdapter('data/config.json')).value();
 const reconnectStates: { [key: string]: number } = {
 	voteChancellor: GameState.voteChancellor,

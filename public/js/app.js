@@ -140,6 +140,15 @@ function main(gameId) {
 					} else {
 						window.location = '/error?error=' + obj.msg + '&sender=' + window.location.pathname;
 					}
+					switch (obj.error) {
+						case '_no_sid':
+						case '_invalid_sid':
+							window.location = '/login?sender=' + window.location;
+							break;
+						default:
+							window.location = '/error?error=' + obj.msg + '&sender=' + window.location.pathname;
+							break;
+					}
 					break;
 			}
 		} catch (err) {

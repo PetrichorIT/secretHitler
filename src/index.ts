@@ -236,13 +236,8 @@ app.ws('/:gameid', (ws, req) => {
 
 					print('Ws', 'Player logged into game');
 					ws.send(JSON.stringify({ type: 'whoami', username: sessionUser.username }));
-					try {
-						game.addPlayer(sessionUser, ws);
-					} catch (e) {
-						console.log(e);
-						error(ws, '_invalid_player');
-						ws.close();
-					}
+
+					game.addPlayer(sessionUser, ws);
 
 					break;
 

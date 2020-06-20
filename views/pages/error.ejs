@@ -1,3 +1,5 @@
+<% if (sender.indexOf(":") !== -1) sender = "<illegalOrigin>"; %> 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -16,6 +18,7 @@
       <p class="card-text"><%= error %></p>
     </div>
     <div class="card-footer">
+      
       Occurred at <a href="<%= sender %>">~/<%= sender %></a>
     </div>
   </div>
