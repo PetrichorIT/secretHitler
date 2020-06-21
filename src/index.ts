@@ -66,7 +66,7 @@ app.get('/', cookieParser(), (req, res) => {
 				} else {
 					gameOverviews[index].isOn = true;
 					gameOverviews[index].data = {
-						players: clients[game.id].length,
+						players: (clients[game.id] || []).length,
 						totalPlayers: game.players.length,
 						isOpen: game.gameState === 1
 					};

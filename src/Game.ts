@@ -125,8 +125,12 @@ export class Game {
 	 * and calling a dismiss handler
 	 */
 	private abort() {
-		this.broadcast({ type: 'abort' });
-		this.dismissGameHandler(false);
+		try {
+			this.broadcast({ type: 'abort' });
+			this.dismissGameHandler(false);
+		} catch(e) {
+			print("Error", e)
+		}
 	}
 
 	/**
@@ -850,10 +854,13 @@ export class Game {
 	private broadcast(event: EventType) {
 		for (const player of this.players) {
 			if (player.client === null) continue;
+			if (player.client.readyState !== 1) continue;
 			player.client.send(JSON.stringify({ type: 'ingame', event }));
 		}
 
 		for (const spectator of this.spectators) {
+			if (spectator.client === null) continue;
+			if (spectator.client.readyState !== 1) continue;
 			spectator.client.send(JSON.stringify({ type: 'ingame', event }));
 		}
 	}
@@ -864,6 +871,7 @@ export class Game {
 	 */
 	private send(player: Player, event: EventType) {
 		if (player.client === null) return;
+		if (player.client.readyState !== 1) return;
 		player.client.send(JSON.stringify({ type: 'ingame', event }));
 		player.lastEvent = event;
 	}
