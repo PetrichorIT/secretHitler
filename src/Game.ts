@@ -128,8 +128,8 @@ export class Game {
 		try {
 			this.broadcast({ type: 'abort' });
 			this.dismissGameHandler(false);
-		} catch(e) {
-			print("Error", e)
+		} catch (e) {
+			print('Error', e);
 		}
 	}
 
@@ -235,7 +235,7 @@ export class Game {
 	 * ready to unpause the game
 	 */
 	private tryUnpause(action: () => void) {
-		if (this.players.length < 2) return;
+		if (this.players.length < 5) return;
 		for (const player of this.players) {
 			if (player.localState) return;
 		}
@@ -852,17 +852,19 @@ export class Game {
 	 * Does not store this message as last message
 	 */
 	private broadcast(event: EventType) {
-		for (const player of this.players) {
-			if (player.client === null) continue;
-			if (player.client.readyState !== 1) continue;
-			player.client.send(JSON.stringify({ type: 'ingame', event }));
-		}
+		try {
+			for (const player of this.players) {
+				if (player.client === null) continue;
+				// if (player.client.readyState !== 1) continue;
+				player.client.send(JSON.stringify({ type: 'ingame', event }));
+			}
 
-		for (const spectator of this.spectators) {
-			if (spectator.client === null) continue;
-			if (spectator.client.readyState !== 1) continue;
-			spectator.client.send(JSON.stringify({ type: 'ingame', event }));
-		}
+			for (const spectator of this.spectators) {
+				// if (spectator.client === null) continue;
+				// if (spectator.client.readyState !== 1) continue;
+				spectator.client.send(JSON.stringify({ type: 'ingame', event }));
+			}
+		} catch (e) {}
 	}
 
 	/**
@@ -870,10 +872,12 @@ export class Game {
 	 * Does store this message in as last message
 	 */
 	private send(player: Player, event: EventType) {
-		if (player.client === null) return;
-		if (player.client.readyState !== 1) return;
-		player.client.send(JSON.stringify({ type: 'ingame', event }));
-		player.lastEvent = event;
+		try {
+			if (player.client === null) return;
+			// if (player.client.readyState !== 1) return;
+			player.client.send(JSON.stringify({ type: 'ingame', event }));
+			player.lastEvent = event;
+		} catch (e) {}
 	}
 
 	/**
