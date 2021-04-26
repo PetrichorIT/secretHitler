@@ -8,7 +8,7 @@ This is a web implementation of the game "Secret Hitler" using node.js, express 
 - npm
 
 ```bash
-$ git clone https://github.com/Unamed001/secretHitler.git
+$ git clone https://github.com/PetrichorIT/secretHitler.git
 $ npm install
 $ npm run build
 $ npm start
